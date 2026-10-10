@@ -161,11 +161,11 @@ export function AppShell({
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
-      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-1 border-r bg-sidebar px-3.5 py-5 md:flex">
-        <div className="mb-4 flex items-center gap-2 px-1.5">
-          <Link href="/" className="flex flex-1 items-center gap-2.5 text-xl font-extrabold tracking-tight">
+      <aside className="sticky top-0 hidden h-dvh w-[76px] shrink-0 flex-col gap-1 border-r bg-sidebar px-3 py-5 md:flex lg:w-60 lg:px-3.5">
+        <div className="mb-4 flex flex-col items-center gap-2 px-1.5 lg:flex-row">
+          <Link href="/" aria-label="Plan" className="flex items-center gap-2.5 text-xl font-extrabold tracking-tight lg:flex-1">
             <span className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-sky text-base text-white">✦</span>
-            Plan
+            <span className="hidden lg:inline">Plan</span>
           </Link>
           <RequestsBell feed={feed} friends={friends} refresh={() => void refresh()} />
         </div>
@@ -173,19 +173,19 @@ export function AppShell({
           {SECTIONS.map((n) => {
             const active = current === n
             return (
-              <Link key={n.href} href={n.href} aria-current={active ? 'page' : undefined}
-                className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 font-bold transition-all duration-150 ${active ? 'bg-sidebar-accent text-foreground shadow-soft' : 'text-muted-foreground hover:bg-sidebar-accent/70 hover:text-foreground'}`}>
+              <Link key={n.href} href={n.href} aria-current={active ? 'page' : undefined} title={n.label}
+                className={`flex flex-col items-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-bold lg:flex-row lg:gap-3 lg:px-3 lg:py-2.5 lg:text-base transition-all duration-150 ${active ? 'bg-sidebar-accent text-foreground shadow-soft' : 'text-muted-foreground hover:bg-sidebar-accent/70 hover:text-foreground'}`}>
                 <span className={`flex size-8 items-center justify-center rounded-xl text-base ${n.tint}`}>{n.emoji}</span>
-                <span className="flex-1">{n.label}</span>
+                <span className="lg:flex-1">{n.label}</span>
               </Link>
             )
           })}
         </nav>
-        <button onClick={() => setCapture(true)} className="mt-3 flex items-center gap-2 rounded-2xl border-2 border-dashed px-3 py-2.5 text-sm font-bold text-muted-foreground hover:border-primary hover:text-foreground">
-          <Plus className="size-4" /> Add a task <kbd className="ml-auto rounded-md border px-1.5 font-mono text-[10px]">Q</kbd>
+        <button onClick={() => setCapture(true)} aria-label="Add a task" className="mt-3 flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-3 py-2.5 text-sm font-bold text-muted-foreground hover:border-primary hover:text-foreground lg:justify-start">
+          <Plus className="size-4" /> <span className="hidden lg:inline">Add a task</span> <kbd className="ml-auto hidden rounded-md border px-1.5 font-mono text-[10px] lg:inline">Q</kbd>
         </button>
         <div className="mt-auto space-y-2 pt-4">
-          <WorkModeCard friends={friends} feed={feed} workMode={workMode} />
+          <div className="hidden lg:block"><WorkModeCard friends={friends} feed={feed} workMode={workMode} /></div>
           <AccountMenu username={username} onWhatsLeft={() => setLeft(true)} />
         </div>
       </aside>
@@ -236,10 +236,10 @@ function AccountMenu({ username, onWhatsLeft }: { username: string; onWhatsLeft:
   const router = useRouter()
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger aria-label="Account menu" className="flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left text-sm font-bold text-muted-foreground hover:bg-sidebar-accent/70 hover:text-foreground">
+      <DropdownMenuTrigger aria-label="Account menu" className="flex w-full items-center justify-center gap-2.5 lg:justify-start rounded-2xl px-2.5 py-2 text-left text-sm font-bold text-muted-foreground hover:bg-sidebar-accent/70 hover:text-foreground">
         <span className="flex size-7 items-center justify-center rounded-full bg-gradient-to-br from-lilac to-sky text-xs text-white">{username.slice(0, 1).toUpperCase()}</span>
-        <span className="flex-1 truncate">@{username}</span>
-        <ChevronsUpDown className="size-3.5" />
+        <span className="hidden flex-1 truncate lg:inline">@{username}</span>
+        <ChevronsUpDown className="hidden size-3.5 lg:block" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-52">
         <DropdownMenuItem onClick={onWhatsLeft}><Sparkles className="size-4" /> My day at a glance</DropdownMenuItem>

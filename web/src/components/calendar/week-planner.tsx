@@ -245,7 +245,7 @@ export function WeekPlanner(props: {
                   : <>→ <b className="text-foreground">{parsed.title}</b> · {fmtDay(parsed.day)} {fmtTime(parsed.start)}–{fmtTime(parsed.start + parsed.minutes)}{parsed.projectName ? ` · ${parsed.projectName}` : ''}</>}
             </p>
           </div>
-          <div className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-y-auto">
+          <div className="flex items-start gap-2 overflow-x-auto lg:flex-col lg:items-stretch lg:overflow-y-auto">
             {(props.goals.length > 0 || budgets.length > 0) && <h2 className="hidden px-1 text-[11px] font-black uppercase tracking-wider text-muted-foreground lg:block">Hours left to place</h2>}
             {budgets.map((p) => {
               const left = Math.max(0, p.weeklyMinutes - (subjectMinutes.get(p.id) ?? 0))
@@ -258,7 +258,7 @@ export function WeekPlanner(props: {
               const chip: Chip = { kind: 'goal', id: g.id, title: g.title, minutes: Math.min(60, left || 60), goalId: g.id, taskId: null, projectId: null, color: null }
               return <TrayChip key={g.id} chip={chip} sub={left ? `${fmtMinutes(left)} left to place` : 'All hours placed'} active={placing?.id === g.id} onPick={() => setPlacing(placing?.id === g.id ? null : chip)} />
             })}
-            {props.goals.length === 0 && budgets.length === 0 && <p className="px-1 text-xs text-muted-foreground"><Link href="/goals/new" className="text-primary hover:underline">Create a goal</Link> or give a project weekly hours to see them here.</p>}
+            {props.goals.length === 0 && budgets.length === 0 && <p className="w-48 shrink-0 px-1 text-xs text-muted-foreground lg:w-auto"><Link href="/goals/new" className="text-primary hover:underline">Create a goal</Link> or give a project weekly hours to see them here.</p>}
             {props.tasks.length > 0 && <h2 className="hidden px-1 pt-1 text-[11px] font-black uppercase tracking-wider text-muted-foreground lg:block">Tasks</h2>}
             {props.tasks.slice(0, 6).map((t) => {
               const chip = taskChip(t)
