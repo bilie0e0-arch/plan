@@ -1,0 +1,20 @@
+import { chromium } from '@playwright/test'
+const out = process.argv[2]
+const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 1366, height: 768 } }); const p = await ctx.newPage()
+const errs = []; p.on('pageerror', (e) => errs.push(e.message))
+const id = Date.now().toString(36)
+await p.goto('http://localhost:3000/signup')
+await p.getByLabel('Username').fill(`fl_${id}`.slice(0, 20)); await p.getByLabel('Recovery email').fill(`${id}@t.dev`); await p.getByLabel('Password').fill('a-long-test-password')
+await p.getByRole('button', { name: 'Create account' }).click(); await p.waitForURL('http://localhost:3000/')
+await p.getByRole('button', { name: 'Skip for now' }).click({ timeout: 15000 }).catch(() => {})
+for (const t of ['Read chapter 3 ~25m', 'Call Sam ~15m']) { await p.getByLabel('What do you want to do?').fill(t); await p.getByRole('button', { name: 'Add', exact: true }).click(); await p.waitForTimeout(800) }
+await p.getByRole('button', { name: 'Timer options for Call Sam' }).click(); await p.waitForTimeout(500)
+await p.screenshot({ path: `${out}/flow-sheet.png` })
+await p.keyboard.press('Escape')
+await p.getByRole('button', { name: 'Start Read chapter 3' }).click(); await p.waitForURL(/\/focus/); await p.waitForTimeout(1500)
+await p.screenshot({ path: `${out}/flow-focus.png` })
+await p.goto('http://localhost:3000/'); await p.waitForTimeout(1200)
+await p.screenshot({ path: `${out}/flow-today-running.png` })
+await p.getByRole('link', { name: '✓ Done' }).first().click(); await p.waitForTimeout(2500)
+await p.screenshot({ path: `${out}/flow-after.png` })
+console.log('ERRORS', JSON.stringify(errs)); await b.close()

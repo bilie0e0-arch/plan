@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Plan — How it works prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #FBF8F3; --bg2: #F4EFE7; --card: #FFFFFF; --ink: #24303B; --muted: #6B7682; --line: #E9E2D6;
+    --main: #2BA59A; --main-soft: #DDF3EF; --sun: #F5B544; --sun-soft: #FFF1D6; --sky: #5B8DEF; --sky-soft: #E3ECFE;
+    --lilac: #8C74D9; --lilac-soft: #EEE8FC; --leaf: #4CB97A; --leaf-soft: #E2F5EA; --rose: #E46F6F;
+    --shadow: 0 1px 2px rgba(36,48,59,.05), 0 6px 20px rgba(36,48,59,.06); --focus-bg: #1A242C;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161C21; --bg2: #1C242A; --card: #20292F; --ink: #EAEFF1; --muted: #9AA6AF; --line: #2D383F;
+      --main: #3BBFB2; --main-soft: #1E3A37; --sun-soft: #3A3122; --sky-soft: #1F2C44; --lilac-soft: #2B2541; --leaf-soft: #1D3528;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: Nunito, ui-rounded, system-ui, sans-serif; background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; display: flex; overflow: hidden; }
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+  .tab { font-variant-numeric: tabular-nums; }
+  kbd { font: 800 11px/1 Nunito, sans-serif; padding: 3px 6px; border-radius: 6px; border: 1px solid currentColor; opacity: .65; margin-left: 4px; white-space: nowrap; }
+  .muted { color: var(--muted); } .small { font-size: 13px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  /* chapter list */
+  nav { width: 270px; flex: none; background: var(--bg2); border-right: 1px solid var(--line); padding: 16px 14px; overflow: hidden; display: flex; flex-direction: column; gap: 3px; }
+  nav .ttl { font-size: 20px; font-weight: 900; padding: 0 10px 2px; }
+  nav .sub { font-size: 13px; color: var(--muted); padding: 0 10px 14px; }
+  nav .bar { height: 6px; border-radius: 3px; background: var(--line); margin: 0 10px 14px; overflow: hidden; }
+  nav .bar i { display: block; height: 100%; background: var(--main); transition: width .3s; }
+  nav button { display: flex; align-items: center; gap: 10px; padding: 5px 10px; border-radius: 12px; font-weight: 800; font-size: 15px; color: var(--muted); text-align: left; }
+  nav button .ic { width: 28px; height: 28px; border-radius: 10px; display: grid; place-items: center; font-size: 16px; background: var(--card); flex: none; }
+  nav button .ck { margin-left: auto; color: var(--main); font-size: 13px; }
+  nav button.on { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+  nav button:hover { color: var(--ink); }
+  nav .grp { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); padding: 7px 10px 1px; }
+
+  main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 22px 36px; gap: 14px; }
+  .top { display: flex; align-items: center; gap: 10px; color: var(--muted); font-weight: 700; font-size: 14px; }
+  .top .x { margin-left: auto; }
+  .stage { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 36px; align-items: center; max-width: 1100px; width: 100%; margin: 0 auto; }
+  .vis { background: var(--card); border-radius: 26px; box-shadow: var(--shadow); padding: 26px; min-height: 360px; display: grid; place-items: center; position: relative; overflow: hidden; }
+  .txt h1 { margin: 0 0 6px; font-size: 34px; font-weight: 900; letter-spacing: -.02em; line-height: 1.1; }
+  .txt .why { font-size: 17px; color: var(--muted); margin-bottom: 18px; }
+  .steps { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+  .st { display: flex; gap: 12px; align-items: flex-start; font-size: 16px; font-weight: 700; line-height: 1.35; }
+  .st .n { width: 28px; height: 28px; border-radius: 9px; background: var(--main-soft); color: var(--main); display: grid; place-items: center; font-weight: 900; font-size: 14px; flex: none; }
+  .tip { background: var(--sun-soft); border-radius: 14px; padding: 10px 14px; font-size: 14px; font-weight: 700; display: flex; gap: 8px; }
+  .keys { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 13px; color: var(--muted); font-weight: 700; margin-top: 12px; }
+  .foot { display: flex; align-items: center; gap: 12px; max-width: 1100px; width: 100%; margin: 0 auto; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 48px; padding: 0 22px; border-radius: 14px; font-weight: 800; }
+  .btn.main { background: var(--main); color: #fff; box-shadow: 0 6px 16px color-mix(in oklab, var(--main) 30%, transparent); }
+  .btn.soft { background: var(--bg2); }
+  .btn.try { background: var(--main-soft); color: var(--main); }
+  .dots { display: flex; gap: 5px; margin: 0 auto; }
+  .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+  .dots i.on { background: var(--main); width: 22px; border-radius: 4px; }
+
+  /* shared mini UI pieces */
+  .m-card { background: var(--bg); border-radius: 16px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; font-weight: 800; box-shadow: var(--shadow); }
+  .m-col { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 420px; }
+  .tag { font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 999px; }
+  .play { margin-left: auto; width: 38px; height: 38px; border-radius: 12px; background: var(--main-soft); color: var(--main); display: grid; place-items: center; font-weight: 900; }
+  .hl { animation: ring 1.6s ease-in-out infinite; }
+  @keyframes ring { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--main) 50%, transparent); } 50% { box-shadow: 0 0 0 8px transparent; } }
+  .typing::after { content: '|'; animation: blink 1s steps(1) infinite; color: var(--main); }
+  @keyframes blink { 50% { opacity: 0; } }
+  .pop-in { animation: popin .4s ease-out both; }
+  @keyframes popin { from { opacity: 0; transform: translateY(8px) scale(.97); } }
+
+  /* loop diagram */
+  .loop { position: relative; width: 340px; height: 340px; }
+  .loop .node { position: absolute; width: 104px; text-align: center; transform: translate(-50%, -50%); font-weight: 900; font-size: 14px; transition: transform .3s; }
+  .loop .node .b { width: 64px; height: 64px; border-radius: 22px; margin: 0 auto 6px; display: grid; place-items: center; font-size: 28px; box-shadow: var(--shadow); transition: transform .3s; }
+  .loop .node.act .b { transform: scale(1.15); box-shadow: 0 0 0 4px var(--main), var(--shadow); }
+  .loop .mid { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font-weight: 900; color: var(--muted); font-size: 14px; }
+
+  .mkey { display: inline-grid; place-items: center; min-width: 44px; height: 44px; padding: 0 10px; border-radius: 12px; background: var(--bg); box-shadow: 0 3px 0 var(--line), var(--shadow); font-weight: 900; }
+  .kgrid { display: grid; grid-template-columns: auto 1fr; gap: 10px 14px; align-items: center; font-weight: 700; font-size: 15px; }
+
+  /* help button demo */
+  .helpdot { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 50%; background: var(--main); color: #fff; font-weight: 900; display: grid; place-items: center; box-shadow: var(--shadow); }
+  .bubble { position: absolute; top: 56px; right: 14px; width: 240px; background: var(--ink); color: var(--bg); border-radius: 14px; padding: 12px; font-size: 13px; font-weight: 700; }
+  .bubble::before { content: ''; position: absolute; top: -6px; right: 12px; width: 12px; height: 12px; background: var(--ink); transform: rotate(45deg); }
+
+  @media (max-width: 860px) {
+    body { flex-direction: column; }
+    nav { width: auto; flex-direction: row; overflow-x: auto; padding: 10px; border-right: 0; border-bottom: 1px solid var(--line); }
+    nav .ttl, nav .sub, nav .bar, nav .grp, nav button span:not(.ic) { display: none; }
+    main { padding: 14px 16px 0; overflow-y: auto; min-height: 0; }
+    .foot { position: sticky; bottom: 0; background: var(--bg); padding: 10px 0; margin-top: auto; } .foot .btn { height: 44px; padding: 0 16px; } .foot .dots, .foot .try { display: none !important; }
+    .stage { grid-template-columns: 1fr; gap: 14px; align-content: start; flex: none; }
+    .vis { min-height: 220px; padding: 16px; }
+    .txt h1 { font-size: 26px; }
+    .steps { gap: 8px; } .st { font-size: 15px; } .keys { display: none; }
+  }
+</style>
+</head>
+<body>
+<nav id="nav"></nav>
+<main>
+  <div class="top"><span id="crumb"></span><span class="x">✕ Close guide <kbd>Esc</kbd></span></div>
+  <div class="stage">
+    <div class="vis" id="vis"></div>
+    <div class="txt" id="txt"></div>
+  </div>
+  <div class="foot">
+    <button class="btn soft" id="back">← Back</button>
+    <div class="dots" id="dots"></div>
+    <button class="btn try" id="try">Try it now</button>
+    <button class="btn main" id="next">Next <kbd>Enter ↵</kbd></button>
+  </div>
+</main>
+
+<script>
+/* ───────────── tiny dial used in several visuals ───────────── */
+const ang = (f) => (135 + 270 * f) * Math.PI / 180
+const pt = (cx, cy, r, f) => [cx + r * Math.cos(ang(f)), cy + r * Math.sin(ang(f))]
+const arc = (cx, cy, r, f0, f1) => { f1 = Math.max(f0 + .0001, f1); const [a, b] = pt(cx, cy, r, f0), [c, d] = pt(cx, cy, r, f1); return `M${a} ${b} A${r} ${r} 0 ${270 * (f1 - f0) > 180 ? 1 : 0} 1 ${c} ${d}` }
+function dial(f, size = 52, color = 'var(--main)', label = '') {
+  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="flex:none"><path d="${arc(50, 52, 38, 0, 1)}" stroke="var(--line)" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path class="dial-arc" d="${arc(50, 52, 38, 0, f)}" stroke="${color}" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <g class="dial-needle" style="transform-origin:50px 52px;transform:rotate(${135 + 270 * f}deg)"><line x1="50" y1="52" x2="80" y2="52" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/></g>
+    <circle cx="50" cy="52" r="6" fill="var(--ink)"/>${label ? `<text x="50" y="92" text-anchor="middle" style="font:900 14px Nunito;fill:var(--ink)">${label}</text>` : ''}</svg>`
+}
+function bigDial() {
+  let ticks = ''
+  for (let i = 0; i <= 25; i++) { const maj = i % 5 === 0, [a, b] = pt(160, 150, 112, i / 25), [c, d] = pt(160, 150, maj ? 92 : 100, i / 25); ticks += `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="rgba(238,242,240,${maj ? .75 : .25})" stroke-width="${maj ? 3 : 1.5}" stroke-linecap="round"/>`; if (maj) { const [x, y] = pt(160, 150, 76, i / 25); ticks += `<text x="${x}" y="${y + 5}" text-anchor="middle" style="font:800 13px Nunito;fill:rgba(238,242,240,.55)">${i}</text>` } }
+  return `<div style="background:radial-gradient(120% 90% at 50% 30%,#24323C,var(--focus-bg) 70%);border-radius:22px;padding:14px 18px 10px;width:100%;max-width:420px;text-align:center;color:#EEF2F0">
+    <div style="font-weight:800">Chapter 4 — Cell respiration</div>
+    <svg viewBox="0 0 320 250" width="100%"><path d="${arc(160, 150, 128, 0, 1)}" stroke="rgba(255,255,255,.08)" stroke-width="16" fill="none" stroke-linecap="round"/>
+      <path id="bigArc" stroke="var(--main)" stroke-width="16" fill="none" stroke-linecap="round"/>${ticks}
+      <g id="bigNeedle" style="transform-origin:160px 150px"><path d="M148 146 L262 150 L148 154 Z" fill="var(--sun)"/></g><circle cx="160" cy="150" r="11" fill="#2C3A45" stroke="var(--sun)" stroke-width="3"/>
+      <text id="bigRead" x="160" y="232" text-anchor="middle" style="font:900 40px Nunito;fill:#EEF2F0" class="tab">25:00</text></svg>
+    <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;font-size:12px;font-weight:800">
+      <span style="background:rgba(255,255,255,.08);padding:6px 10px;border-radius:10px">⏸ Pause <kbd>Space</kbd></span><span style="background:rgba(255,255,255,.08);padding:6px 10px;border-radius:10px">😵 Distracted <kbd>D</kbd></span><span style="background:var(--main);padding:6px 10px;border-radius:10px">✓ Done <kbd>Enter</kbd></span></div></div>`
+}
+
+/* ───────────── chapters ───────────── */
+const SUBJ = { Biology: ['var(--leaf)', 'var(--leaf-soft)'], Spanish: ['var(--sky)', 'var(--sky-soft)'], Maths: ['#C98A10', 'var(--sun-soft)'], Guitar: ['var(--lilac)', 'var(--lilac-soft)'] }
+const tag = (s) => `<span class="tag" style="background:${SUBJ[s][1]};color:${SUBJ[s][0]}">${s}</span>`
+const CH = [
+  { grp: 'Start here', ic: '👋', bg: 'var(--main-soft)', name: 'How Plan works',
+    h: 'One simple loop, every day', why: 'Plan helps you study and build skills by doing the next small thing — and getting better at it each week.',
+    steps: ['<b>Add</b> what you want to do — a few words is enough.', '<b>Plan</b> it onto your day or week.', '<b>Focus</b> with the big clock, then mark it <b>done</b>.', 'Once a week, <b>review</b> — the app shows what worked.'],
+    tip: 'You never have to use everything. Today + the clock is a complete way to use Plan.',
+    vis: () => {
+      const N = [['➕', 'Add', 'var(--sun-soft)'], ['🗓️', 'Plan', 'var(--sky-soft)'], ['⏱', 'Focus', 'var(--main-soft)'], ['✅', 'Done', 'var(--leaf-soft)'], ['🔁', 'Review', 'var(--lilac-soft)']]
+      return `<div class="loop" id="loop">${N.map(([e, l, c], i) => { const a = -Math.PI / 2 + i * 2 * Math.PI / 5; return `<div class="node" style="left:${170 + 125 * Math.cos(a)}px;top:${170 + 125 * Math.sin(a)}px"><div class="b" style="background:${c}">${e}</div>${l}</div>` }).join('')}
+        <div class="mid">every day<br><span style="font-size:24px;color:var(--ink)">↻</span><br>gets a bit better</div></div>`
+    }, anim: (t) => { const n = document.querySelectorAll('#loop .node'); n.forEach((x, i) => x.classList.toggle('act', i === Math.floor(t / 1200) % 5)) } },
+
+  { grp: 'Start here', ic: '➕', bg: 'var(--sun-soft)', name: 'Add things fast',
+    h: 'Add in plain words', why: 'Type it like you’d say it. Plan picks out the time, length and subject for you.',
+    steps: ['Type in the box on Today and press <b>Enter</b>.', 'Add <b>~30m</b> for length, <b>tomorrow 9am</b> for a time, <b>#Biology</b> for a subject.', 'Hold <b>Shift+Enter</b> to add and keep typing the next one.', 'Or tap 🎤 and say it.'],
+    tip: 'Not sure when? Just add it — it waits in your list until you place it.',
+    keys: [['Enter', 'add'], ['Shift+Enter', 'add & next'], ['N', 'add from anywhere']],
+    vis: () => `<div class="m-col"><div class="m-card hl" style="background:var(--card);border:2px solid var(--main)"><span id="typer" class="typing" style="font-weight:700"></span></div>
+      <div id="parsed" style="display:flex;gap:6px;flex-wrap:wrap;min-height:30px"></div>
+      <div class="m-card" style="opacity:.85">${dial(0, 40)}<div><div>Practise 20 Spanish verbs</div>${tag('Spanish')}<span class="small muted">20 min</span></div><span class="play">▶</span></div></div>`,
+    anim: (t) => {
+      const full = 'Read chapter 5 ~30m tomorrow 9am #Biology', n = Math.min(full.length, Math.floor((t % 6500) / 90))
+      const el = document.getElementById('typer'); if (el) el.textContent = full.slice(0, n)
+      const p = document.getElementById('parsed'); if (!p) return
+      const want = (n >= full.length ? 3 : n > 30 ? 2 : n > 16 ? 1 : 0)
+      if (p.childElementCount !== want) p.innerHTML = [['⏱ 30 min', 'var(--main-soft)'], ['📅 Tomorrow 9:00', 'var(--sky-soft)'], ['● Biology', 'var(--leaf-soft)']].slice(0, want).map(([l, c]) => `<span class="pop-in tag" style="background:${c};color:var(--ink);font-size:13px;padding:6px 10px">${l}</span>`).join('')
+    } },
+
+  { grp: 'Every day', ic: '☀️', bg: 'var(--sun-soft)', name: 'Your Today screen',
+    h: 'Today shows only what matters now', why: 'Your list for today, each with a little dial showing time spent against your estimate.',
+    steps: ['Press <b>▶</b> on a task — the clock starts at once.', 'The dial fills as you work. Purple means you ran over (that’s fine — it teaches your estimates).', 'Tap <b>✓</b> when it’s done. The big dial at the top is your whole day.'],
+    tip: 'The highlighted card at the top is the app’s one suggestion. Ignore it any time.',
+    vis: () => `<div class="m-col"><div style="display:flex;gap:12px;align-items:center;margin-bottom:4px">${dial(.52, 74, 'var(--main)', '1.6h')}<div><div style="font-size:20px;font-weight:900">Good morning 👋</div><div class="small muted">1h 36m of 3h · 1 of 4 done</div></div></div>
+      <div class="m-card hl" style="outline:2px solid var(--main)"><span id="d0">${dial(.4, 44)}</span><div><div>Chapter 4 — Cell respiration</div>${tag('Biology')}<span class="small muted tab" id="t0">20 of 50 min</span></div><span class="play">⏸</span></div>
+      <div class="m-card">${dial(.8, 44)}<div><div>Guitar — F chord</div>${tag('Guitar')}<span class="small muted">12 of 15 min</span></div><span class="play">▶</span></div>
+      <div class="m-card">${dial(1, 44, 'var(--lilac)')}<div><div>Past paper Q1–Q5</div>${tag('Maths')}<span class="small muted">58 of 45 min · ran over</span></div><span class="play">▶</span></div></div>`,
+    anim: (t) => { const f = .4 + ((t / 1000) % 30) / 50; const d = document.getElementById('d0'); if (d) d.innerHTML = dial(f, 44); const x = document.getElementById('t0'); if (x) x.textContent = `${Math.round(f * 50)} of 50 min · ticking` } },
+
+  { grp: 'Every day', ic: '⏱', bg: 'var(--main-soft)', name: 'The focus clock',
+    h: 'A big clock that keeps you going', why: 'The needle sweeps across the minutes and the inner dots tick every second, so you always see time moving.',
+    steps: ['Pick a timer: <b>Set time</b>, <b>Grow my focus</b> (gets longer as you improve), <b>Just 5 minutes</b>, <b>Open</b>, or <b>Guess the time</b>.', 'Phone pulled you away? Press <b>D</b>. A stray thought? <b>P</b> parks it for later.', 'Press <b>Enter</b> when done — rate how it went in one tap.'],
+    tip: 'The yellow end of the dial is your final stretch. Past the end it turns purple and counts extra time.',
+    keys: [['Space', 'pause'], ['D', 'distracted'], ['P', 'park a thought'], ['Enter', 'done']],
+    vis: bigDial, anim: (t) => { const f = ((t / 1000) % 25) / 25; const a = document.getElementById('bigArc'); if (!a) return; a.setAttribute('d', arc(160, 150, 128, 0, f)); document.getElementById('bigNeedle').style.transform = `rotate(${135 + 270 * f}deg)`; const s = Math.round((1 - f) * 1500); document.getElementById('bigRead').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` } },
+
+  { grp: 'Every day', ic: '🌙', bg: 'var(--lilac-soft)', name: 'Start & close the day',
+    h: 'Two minutes morning and night', why: 'A quick check-in in the morning and a short wrap-up at night. Every step works with Enter.',
+    steps: ['<b>Plan my day</b>: energy → pick today’s tasks → done. Press Enter on each step.', '<b>Close the day</b>: tick what’s finished, move the rest, one line on how it went.', 'Number keys pick an option; Esc goes back.'],
+    tip: 'Skipped a day? Nothing breaks. Just start again tomorrow.',
+    keys: [['1–5', 'choose'], ['Enter', 'next'], ['Esc', 'back']],
+    vis: () => `<div class="m-col" style="gap:14px"><div style="display:flex;gap:5px">${[1, 1, 0, 0].map((o) => `<i style="flex:1;height:6px;border-radius:3px;background:${o ? 'var(--main)' : 'var(--line)'}"></i>`).join('')}</div>
+      <div style="font-size:22px;font-weight:900">How’s your energy today?</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px" id="nrg">${['😴', '🥱', '🙂', '😊', '⚡'].map((e, i) => `<div class="m-card" style="flex-direction:column;gap:2px;padding:10px 4px;border:2px solid transparent"><b>${i + 1}</b>${e}</div>`).join('')}</div>
+      <div style="display:flex;justify-content:flex-end"><span class="btn main hl">Next <kbd>Enter ↵</kbd></span></div></div>`,
+    anim: (t) => { const k = Math.floor(t / 900) % 5; document.querySelectorAll('#nrg .m-card').forEach((c, i) => { c.style.borderColor = i === k ? 'var(--main)' : 'transparent'; c.style.background = i === k ? 'var(--main-soft)' : '' }) } },
+
+  { grp: 'Plan ahead', ic: '🗓️', bg: 'var(--sky-soft)', name: 'Calendar',
+    h: 'Drag to block time', why: 'Give your study a time and it actually happens. Day, Week and Month views — colours show each subject.',
+    steps: ['<b>Drag down</b> on an empty time, type a name, press <b>Enter</b>.', 'Drag tasks or “hours left” from the left onto the calendar.', 'Drag a block to move it; drag its bottom edge to make it longer.', 'Happy with the week? <b>Lock in my week</b> — later you’ll see plan vs. reality.'],
+    tip: 'Green stripes = hours when you usually keep your plans. Put hard things there.',
+    keys: [['D / W / M', 'day · week · month'], ['T', 'today'], ['← →', 'move']],
+    vis: () => {
+      const cols = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+      const b = [[0, 1, 2, 'Biology'], [1, 1, 1.5, 'Biology'], [2, 2, 1.5, 'Maths'], [3, 1, 2, 'Biology'], [4, 1, 2, 'Biology'], [0, 8, .7, 'Spanish'], [2, 8, .7, 'Spanish'], [3, 9, .7, 'Guitar'], [4, 5, 1, 'Maths']]
+      return `<div style="width:100%;max-width:440px;background:var(--bg);border-radius:16px;padding:10px;position:relative">
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;font-size:12px;font-weight:800;color:var(--muted);text-align:center;margin-bottom:6px">${cols.map((c) => `<span>${c}</span>`).join('')}</div>
+        <div style="position:relative;height:260px;display:grid;grid-template-columns:repeat(5,1fr);gap:4px">${cols.map(() => `<div style="background:var(--card);border-radius:8px"></div>`).join('')}
+        ${b.map(([d, s, l, k]) => `<div style="position:absolute;left:calc(${d} * 20% + 3px);width:calc(20% - 7px);top:${s * 24}px;height:${l * 24}px;background:${SUBJ[k][1]};border-left:4px solid ${SUBJ[k][0]};border-radius:6px;font-size:11px;font-weight:800;padding:2px 5px">${k}</div>`).join('')}
+        <div id="ghost" style="position:absolute;left:calc(1 * 20% + 3px);width:calc(20% - 7px);top:${4 * 24}px;border:2px dashed var(--main);background:var(--main-soft);border-radius:6px;font-size:11px;font-weight:900;color:var(--main);padding:2px 5px"></div>
+        <div id="cursor" style="position:absolute;font-size:22px;left:calc(1 * 20% + 40px)">👆</div></div></div>`
+    },
+    anim: (t) => { const p = (t % 4000) / 4000, h = Math.min(1, p * 1.6) * 3; const g = document.getElementById('ghost'); if (!g) return; g.style.height = Math.max(12, h * 24) + 'px'; g.textContent = p > .7 ? 'Essay plan ✓' : `11:00–${11 + Math.floor(h)}:${h % 1 >= .5 ? '30' : '00'}`; document.getElementById('cursor').style.top = (4 * 24 + Math.max(12, h * 24) - 8) + 'px' } },
+
+  { grp: 'Plan ahead', ic: '🎯', bg: 'var(--leaf-soft)', name: 'Goals',
+    h: 'Goals turn into weekly hours', why: 'Say what you’re aiming for, and how many hours a week it needs. Plan keeps count.',
+    steps: ['Pick a kind: <b>Result</b> (pass the exam), <b>Learning</b> (understand chapter 5), or <b>Habit</b> (practise 20 min a day).', 'Set hours per week — they show up as “hours left to place” in the calendar.', 'Each week you guess how likely you are to hit it. Over time your guesses get sharper.'],
+    tip: 'Up to 5 active goals. Fewer is usually better.',
+    vis: () => `<div class="m-col">${[['Biology finals — 75%+', 'Result · by 15 Dec', 'Biology', .7, '5.5h of 8h this week'], ['Spanish — hold a 5-min chat', 'Learning', 'Spanish', .45, '1.5h of 3h this week'], ['Guitar 15 min a day', 'Habit', 'Guitar', .85, '6 of 7 days']].map(([n, k, s, f, l]) => `
+      <div class="m-card" style="flex-direction:column;align-items:stretch;gap:6px"><div style="display:flex;gap:8px;align-items:center"><span style="width:10px;height:10px;border-radius:50%;background:${SUBJ[s][0]}"></span><b>${n}</b><span class="small muted" style="margin-left:auto">${k}</span></div>
+      <div style="height:8px;border-radius:4px;background:var(--line);overflow:hidden"><i style="display:block;height:100%;width:${f * 100}%;background:${SUBJ[s][0]}"></i></div><span class="small muted">${l}</span></div>`).join('')}</div>` },
+
+  { grp: 'Get better', ic: '🌱', bg: 'var(--leaf-soft)', name: 'Progress & skills',
+    h: 'See yourself improve', why: 'Plan measures 8 everyday skills — like starting on time and guessing how long things take — from what you actually do.',
+    steps: ['Each skill shows a level and the <b>one action</b> that trains it.', 'Personal bests and patterns appear as you use the app (“mornings go best for you”).', 'As a skill grows, the app’s hints fade away — you’re doing it yourself.'],
+    tip: 'Needs about a week of use before the numbers mean much.',
+    vis: () => `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:420px">${[['🚀', 'Starting', 'Strong', .82, 'var(--main)'], ['🎯', 'Staying focused', 'Growing', .55, 'var(--sky)'], ['⏳', 'Guessing time', 'Learning', .35, 'var(--sun)'], ['🤝', 'Keeping plans', 'Strong', .78, 'var(--leaf)']].map(([e, n, l, f, c]) => `
+      <div class="m-card" style="flex-direction:column;align-items:flex-start;gap:4px"><span style="font-size:22px">${e}</span><b>${n}</b><span class="small" style="color:${c}">${l}</span><div style="height:6px;width:100%;border-radius:3px;background:var(--line);overflow:hidden"><i style="display:block;height:100%;width:${f * 100}%;background:${c}"></i></div></div>`).join('')}
+      <div class="m-card" style="grid-column:span 2;background:var(--sun-soft)">🏆 New best: 3 focus sessions in a row with no distractions</div></div>` },
+
+  { grp: 'Get better', ic: '🔁', bg: 'var(--lilac-soft)', name: 'Weekly review',
+    h: '10 minutes on Sunday', why: 'Look back, learn one thing, plan next week. It walks you through step by step — Enter all the way.',
+    steps: ['See your <b>Week Wrapped</b>: hours, blocks kept, best day.', 'Check your goals and pick next week’s <b>mission</b> (one small challenge).', 'Place next week’s hours and lock it in.'],
+    tip: 'Fri–Sun reviews this week and plans next week.',
+    vis: () => `<div style="width:100%;max-width:400px;border-radius:22px;padding:20px;background:linear-gradient(135deg,var(--main),var(--sky));color:#fff">
+      <div style="font-weight:800;opacity:.85">Week Wrapped · 5–11 Oct</div><div style="font-size:44px;font-weight:900;line-height:1.1" class="tab">14h 20m</div><div style="font-weight:800;opacity:.9">focused this week · +2h vs last</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">${[['86%', 'blocks kept'], ['Thu', 'best day'], ['23', 'sessions'], ['🎯', 'mission done']].map(([a, b]) => `<div style="background:rgba(255,255,255,.18);border-radius:12px;padding:8px 10px"><b style="font-size:20px">${a}</b><div class="small">${b}</div></div>`).join('')}</div></div>` },
+
+  { grp: 'Extras', ic: '🎤', bg: 'var(--sky-soft)', name: 'Speak',
+    h: 'Practise explaining out loud', why: 'Explaining something is one of the best ways to learn it. Record a short answer and see clear numbers.',
+    steps: ['Pick a prompt — or “explain what you studied today”.', 'Talk for 60 seconds. Listen back if you like.', 'See your pace, filler words (um, like…) and pauses. Try again to beat it.'],
+    tip: 'Audio stays on your device unless you turn on “Keep the audio” in Settings.',
+    vis: () => `<div class="m-col" style="align-items:center;gap:16px"><div class="hl" style="width:96px;height:96px;border-radius:50%;background:var(--rose);display:grid;place-items:center;font-size:40px;color:#fff">🎤</div>
+      <div style="display:flex;gap:3px;align-items:center;height:40px" id="wave">${Array.from({ length: 28 }, () => '<i style="width:5px;border-radius:3px;background:var(--main)"></i>').join('')}</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%">${[['142', 'words/min'], ['2.1', 'fillers/min'], ['A−', 'clarity']].map(([a, b]) => `<div class="m-card" style="flex-direction:column;gap:0"><b style="font-size:22px">${a}</b><span class="small muted">${b}</span></div>`).join('')}</div></div>`,
+    anim: (t) => document.querySelectorAll('#wave i').forEach((w, i) => w.style.height = (8 + 30 * Math.abs(Math.sin(t / 300 + i * .7))) + 'px') },
+
+  { grp: 'Extras', ic: '🤝', bg: 'var(--sun-soft)', name: 'Study with a partner',
+    h: 'Focus together, even apart', why: 'Pair with a friend. Start sessions at the same time, with an optional call — like a library table.',
+    steps: ['Share your partner code or invite link.', 'Choose what they see: <b>Exact</b>, <b>Count</b> only, or <b>Private</b>.', 'Tap <b>Focus together</b> — you both get the same 3-2-1 and the same clock.'],
+    tip: 'Leaving a pair stops all sharing instantly.',
+    vis: () => `<div class="m-col" style="align-items:center;gap:14px"><div style="display:flex;gap:26px;align-items:center">
+      <div style="text-align:center"><div style="width:72px;height:72px;border-radius:50%;background:var(--main-soft);display:grid;place-items:center;font-size:34px">🧑‍🎓</div><b>You</b><div class="small muted">Biology</div></div>
+      ${dial(.6, 86, 'var(--main)', '18:40')}
+      <div style="text-align:center"><div style="width:72px;height:72px;border-radius:50%;background:var(--sun-soft);display:grid;place-items:center;font-size:34px">👩‍💻</div><b>Sam</b><div class="small muted">3 planned · 2 done</div></div></div>
+      <div class="m-card">🎉 Sam sent a high-five</div></div>` },
+
+  { grp: 'Extras', ic: '⌨️', bg: 'var(--bg2)', name: 'Keys & help',
+    h: 'Shortcuts — and help is always one tap away', why: 'Everything works by tapping. Keys are a bonus if you’re on a computer.',
+    steps: ['Press <b>?</b> on any screen (or the round <b>?</b> button) to open the guide right at that topic.', '<b>Ctrl+K</b> finds any task and acts on it.'],
+    tip: 'You can re-open this guide any time from the account menu → How Plan works.',
+    vis: () => `<div class="kgrid" style="width:100%;max-width:420px">${[['Enter', 'Next step / save / done'], ['Esc', 'Back / close'], ['N', 'Add something'], ['Space', 'Pause the clock'], ['Ctrl K', 'Find & do anything'], ['G then T', 'Go to Today (G C = calendar…)'], ['?', 'Help for this screen']].map(([k, d]) => `<span class="mkey">${k}</span><span>${d}</span>`).join('')}</div>
+      <div class="helpdot">?</div><div class="bubble">On every screen: this button opens the guide at the right chapter.</div>` },
+]
+
+/* ───────────── shell ───────────── */
+let cur = 0; const seen = new Set([0])
+const $ = (id) => document.getElementById(id)
+function renderNav() {
+  let g = ''
+  $('nav').innerHTML = `<div class="ttl">How Plan works</div><div class="sub">${seen.size} of ${CH.length} seen · about 4 minutes</div><div class="bar"><i style="width:${seen.size / CH.length * 100}%"></i></div>` +
+    CH.map((c, i) => { const head = c.grp !== g ? `<div class="grp">${(g = c.grp)}</div>` : ''; return `${head}<button data-i="${i}" class="${i === cur ? 'on' : ''}"><span class="ic" style="background:${c.bg}">${c.ic}</span><span>${c.name}</span>${seen.has(i) && i !== cur ? '<span class="ck">✓</span>' : ''}</button>` }).join('')
+}
+let t0 = performance.now()
+function show(i) {
+  cur = Math.max(0, Math.min(CH.length - 1, i)); seen.add(cur); t0 = performance.now()
+  const c = CH[cur]
+  $('crumb').textContent = `${c.grp} · ${cur + 1} of ${CH.length}`
+  $('vis').innerHTML = c.vis()
+  $('txt').innerHTML = `<h1>${c.h}</h1><div class="why">${c.why}</div><div class="steps">${c.steps.map((s, k) => `<div class="st"><span class="n">${k + 1}</span><span>${s}</span></div>`).join('')}</div><div class="tip">💡 <span>${c.tip}</span></div>${c.keys ? `<div class="keys">${c.keys.map(([k, d]) => `<span><kbd>${k}</kbd> ${d}</span>`).join('')}</div>` : ''}`
+  $('dots').innerHTML = CH.map((_, k) => `<i class="${k === cur ? 'on' : ''}"></i>`).join('')
+  $('back').style.visibility = cur ? 'visible' : 'hidden'
+  $('next').innerHTML = cur === CH.length - 1 ? 'Finish <kbd>Enter ↵</kbd>' : 'Next <kbd>Enter ↵</kbd>'
+  $('try').style.display = cur && cur < CH.length - 1 ? '' : 'none'
+  renderNav()
+}
+$('nav').onclick = (e) => { const b = e.target.closest('[data-i]'); if (b) show(+b.dataset.i) }
+$('next').onclick = () => show(cur + 1)
+$('back').onclick = () => show(cur - 1)
+$('try').onclick = () => alert('In the app this jumps to the real screen with this part highlighted.')
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === 'ArrowRight') show(cur + 1)
+  else if (e.key === 'ArrowLeft' || e.key === 'Backspace') show(cur - 1)
+  else if (/^[1-9]$/.test(e.key)) show(+e.key - 1)
+})
+function loop(now) { const a = CH[cur].anim; if (a) a(now - t0); requestAnimationFrame(loop) }
+show(0); requestAnimationFrame(loop)
+</script>
+</body>
+</html>

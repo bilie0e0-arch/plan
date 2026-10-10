@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Plan — Friends prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #FBF8F3; --bg2: #F4EFE7; --card: #FFFFFF; --ink: #24303B; --muted: #6B7682; --line: #E9E2D6;
+    --main: #2BA59A; --main-soft: #DDF3EF; --sun: #F5B544; --sun-soft: #FFF1D6; --sky: #5B8DEF; --sky-soft: #E3ECFE;
+    --lilac: #8C74D9; --lilac-soft: #EEE8FC; --leaf: #4CB97A; --leaf-soft: #E2F5EA; --rose: #E46F6F; --rose-soft: #FCE7E7;
+    --shadow: 0 1px 2px rgba(36,48,59,.05), 0 6px 20px rgba(36,48,59,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161C21; --bg2: #1C242A; --card: #20292F; --ink: #EAEFF1; --muted: #9AA6AF; --line: #2D383F;
+      --main: #3BBFB2; --main-soft: #1E3A37; --sun-soft: #3A3122; --sky-soft: #1F2C44; --lilac-soft: #2B2541; --leaf-soft: #1D3528; --rose-soft: #3A2425;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: Nunito, ui-rounded, system-ui, sans-serif; background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; overflow: hidden; }
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+  input { font: inherit; color: inherit; }
+  .tab { font-variant-numeric: tabular-nums; }
+  .muted { color: var(--muted); } .small { font-size: 13px; }
+  kbd { font: 800 11px/1 Nunito, sans-serif; padding: 3px 6px; border-radius: 6px; border: 1px solid currentColor; opacity: .6; margin-left: 4px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  .page { height: 100%; display: flex; flex-direction: column; gap: 14px; padding: 18px 24px; max-width: 1200px; margin: 0 auto; }
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 26px; font-weight: 900; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 42px; padding: 0 16px; border-radius: 13px; font-weight: 800; font-size: 14px; white-space: nowrap; }
+  .btn.main { background: var(--main); color: #fff; box-shadow: 0 6px 16px color-mix(in oklab, var(--main) 30%, transparent); }
+  .btn.soft { background: var(--bg2); }
+  .btn.sm { height: 34px; padding: 0 12px; font-size: 13px; border-radius: 11px; }
+  .grow { flex: 1; }
+  .codechip { display: flex; align-items: center; gap: 8px; background: var(--card); border-radius: 12px; padding: 6px 6px 6px 12px; box-shadow: var(--shadow); font-weight: 800; font-size: 14px; }
+  .codechip b { letter-spacing: .06em; }
+
+  .body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; }
+  .col { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+  .sect { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 4px 2px 0; display: flex; align-items: center; gap: 8px; }
+  .card { background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 14px; }
+
+  /* friend rows */
+  .friends { display: flex; flex-direction: column; gap: 8px; overflow: auto; padding: 2px; }
+  .fr { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px; background: var(--card); box-shadow: var(--shadow); border: 2px solid transparent; cursor: pointer; text-align: left; width: 100%; }
+  .fr.sel { border-color: var(--main); }
+  .av { position: relative; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; flex: none; }
+  .av::after { content: ''; position: absolute; right: -1px; bottom: -1px; width: 13px; height: 13px; border-radius: 50%; border: 3px solid var(--card); background: #B8C0C7; }
+  .av.on::after { background: var(--leaf); }
+  .av.focus { box-shadow: 0 0 0 3px var(--main); }
+  .av.focus::after { background: var(--main); animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { transform: scale(1.3); } }
+  .fr .t { flex: 1; min-width: 0; }
+  .fr .t b { display: block; font-size: 16px; }
+  .fr .t span { font-size: 13px; color: var(--muted); font-weight: 700; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin-top: 5px; width: 140px; }
+  .bar i { display: block; height: 100%; background: var(--main); border-radius: 3px; }
+  .pill { font-size: 11px; font-weight: 900; padding: 3px 8px; border-radius: 999px; }
+  .req { display: flex; align-items: center; gap: 10px; background: var(--sun-soft); border-radius: 16px; padding: 10px 12px; }
+
+  /* detail */
+  .detail { overflow: auto; }
+  .dh { display: flex; align-items: center; gap: 12px; }
+  .dh .av { width: 56px; height: 56px; font-size: 28px; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { padding: 7px 12px; border-radius: 999px; background: var(--bg2); font-weight: 800; font-size: 13px; border: 2px solid transparent; }
+  .chip.on { border-color: var(--main); background: var(--main-soft); }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .react { display: flex; gap: 6px; }
+  .react button { width: 42px; height: 42px; border-radius: 12px; background: var(--bg2); font-size: 20px; transition: transform .1s; }
+  .react button:active { transform: scale(.9); }
+  .list li { display: flex; gap: 8px; align-items: center; padding: 6px 0; font-weight: 700; font-size: 14px; }
+  .list ul { list-style: none; margin: 0; padding: 0; }
+  .ck { width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--line); display: grid; place-items: center; font-size: 12px; flex: none; }
+  .ck.on { background: var(--main); border-color: var(--main); color: #fff; }
+
+  /* focus together sheet */
+  .scrim { position: fixed; inset: 0; background: rgba(20,28,34,.35); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; z-index: 40; padding: 16px; }
+  .scrim.on { display: flex; }
+  .sheet { width: 100%; max-width: 480px; background: var(--card); border-radius: 26px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+  .sheet h2 { margin: 0; font-size: 22px; font-weight: 900; }
+  .pick { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pick button { display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 999px; background: var(--bg2); font-weight: 800; border: 2px solid transparent; }
+  .pick button.on { border-color: var(--main); background: var(--main-soft); }
+  .pick .a { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; }
+  .calls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .calls button { padding: 12px 6px; border-radius: 16px; background: var(--bg2); font-weight: 800; border: 2px solid transparent; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .calls button.on { border-color: var(--main); background: var(--main-soft); }
+
+  /* room preview */
+  .room { position: fixed; inset: 0; z-index: 45; background: radial-gradient(120% 90% at 50% 30%, #24323C, #1A242C 70%); color: #EEF2F0; display: none; flex-direction: column; padding: 18px 24px; gap: 14px; }
+  .room.on { display: flex; }
+  .tiles { flex: 1; min-height: 0; display: grid; gap: 12px; }
+  .tile { border-radius: 20px; background: #2A3842; position: relative; display: grid; place-items: center; font-size: 64px; overflow: hidden; }
+  .tile .nm { position: absolute; left: 12px; bottom: 10px; font-size: 14px; font-weight: 800; background: rgba(0,0,0,.35); padding: 4px 10px; border-radius: 999px; }
+  .tile .mic { position: absolute; right: 12px; bottom: 10px; font-size: 13px; background: rgba(0,0,0,.35); padding: 4px 8px; border-radius: 999px; }
+  .rbar { display: flex; align-items: center; gap: 12px; justify-content: center; }
+  .rbar .clock { font-size: 40px; font-weight: 900; }
+  .rbar button { height: 44px; padding: 0 16px; border-radius: 14px; background: rgba(255,255,255,.1); font-weight: 800; color: #EEF2F0; }
+
+  .note { position: fixed; left: 12px; bottom: 12px; max-width: 380px; background: var(--ink); color: var(--bg); padding: 12px 14px; border-radius: 14px; font-size: 13px; line-height: 1.45; z-index: 30; }
+  .note b { color: var(--sun); } .note button { float: right; color: var(--bg); opacity: .6; }
+
+  @media (max-width: 860px) {
+    body { overflow: auto; }
+    .page { height: auto; padding: 12px 14px 90px; }
+    .body { grid-template-columns: 1fr; }
+    .detail { display: none; }
+    .codechip { display: none; }
+    .note { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Friends</h1>
+    <span class="muted small" id="online"></span>
+    <span class="grow"></span>
+    <div class="codechip">My code <b>PLN-7K2QX</b><button class="btn sm soft">Copy</button></div>
+    <button class="btn soft" id="addBtn">＋ Add a friend</button>
+    <button class="btn main" id="togetherBtn">👥 Focus together</button>
+  </header>
+
+  <div class="body">
+    <div class="col">
+      <div class="req" id="req">
+        <span class="av" style="background:var(--sky-soft);width:38px;height:38px;font-size:18px">🧑‍🔬</span>
+        <div class="grow"><b>Riya</b> <span class="muted small">wants to be study friends · code PLN-4M9TR</span></div>
+        <button class="btn sm main" id="acc">Accept</button><button class="btn sm soft" id="dec">Not now</button>
+      </div>
+      <div class="sect">Focusing now</div>
+      <div class="friends" id="list"></div>
+    </div>
+
+    <aside class="col detail" id="detail"></aside>
+  </div>
+</div>
+
+<!-- Focus together sheet -->
+<div class="scrim" id="scrim">
+  <div class="sheet" role="dialog" aria-label="Focus together">
+    <h2>Focus together</h2>
+    <div class="small muted" style="margin-top:-8px">Pick friends — they get a small card (never a pop-up while they focus).</div>
+    <div class="pick" id="pick"></div>
+    <div><div class="small muted" style="font-weight:800;margin-bottom:6px">For how long</div>
+      <div class="chips" id="mins"></div></div>
+    <div><div class="small muted" style="font-weight:800;margin-bottom:6px">Call</div>
+      <div class="calls" id="calls"></div>
+      <div class="small muted" id="callnote" style="margin-top:6px"></div></div>
+    <div class="row"><button class="btn soft" id="cancel">Cancel <kbd>Esc</kbd></button><span class="grow"></span><button class="btn main" id="send">Send invite <kbd>Enter ↵</kbd></button></div>
+  </div>
+</div>
+
+<!-- Room preview -->
+<div class="room" id="room">
+  <div class="row" style="justify-content:space-between"><b>Study room · Biology + Spanish + Guitar</b><button class="btn sm" style="background:rgba(255,255,255,.1);color:#EEF2F0" id="leave">Leave room</button></div>
+  <div class="tiles" id="tiles"></div>
+  <div class="rbar"><span class="clock tab" id="rclock">24:59</span><button>🎤 Muted while focusing</button><button>📷 Camera</button><button>🙌 High-five</button></div>
+</div>
+
+<div class="note" id="note"><button onclick="this.parentNode.remove()">✕</button>
+  <b>Try:</b> click a friend to see the side panel · <b>Focus together</b> → pick one or more friends, a length and the call type, then Enter → see the study room. Sharing level is <b>per friend</b>. Accept Riya’s request to add her to the list.
+</div>
+
+<script>
+const F = [
+  { id: 'sam', name: 'Sam', emoji: '👩‍💻', bg: 'var(--sun-soft)', st: 'focus', left: 18, on: 'Maths · past paper', planned: 4, done: 2, share: 'exact', quest: [6.5, 10], streak: 'Studied together 3× this week' },
+  { id: 'arjun', name: 'Arjun', emoji: '🧑‍🎓', bg: 'var(--leaf-soft)', st: 'on', planned: 5, done: 3, share: 'count', quest: [3, 8], streak: 'Last focused together: yesterday' },
+  { id: 'meera', name: 'Meera', emoji: '👩‍🎨', bg: 'var(--lilac-soft)', st: 'focus', left: 6, on: null, planned: 3, done: 1, share: 'count', quest: [2, 5], streak: 'New friend 🌱' },
+  { id: 'dev', name: 'Dev', emoji: '🧑‍🍳', bg: 'var(--sky-soft)', st: 'off', planned: null, done: null, share: 'private', quest: null, streak: 'Last seen 2 days ago' },
+]
+let sel = 'sam', pickSet = new Set(['sam']), mins = 50, call = 'video'
+const $ = (id) => document.getElementById(id)
+const status = (f) => f.st === 'focus' ? `<span class="pill" style="background:var(--main-soft);color:var(--main)">● Focusing · ${f.left} min left</span>` : f.st === 'on' ? `<span class="pill" style="background:var(--leaf-soft);color:#2f8a57">Online</span>` : `<span class="pill" style="background:var(--bg2);color:var(--muted)">Away</span>`
+const today = (f) => f.planned == null ? 'Sharing is private' : `${f.planned} planned · ${f.done} done today`
+
+function renderList() {
+  const focusing = F.filter((f) => f.st === 'focus'), rest = F.filter((f) => f.st !== 'focus')
+  $('online').textContent = `${F.filter((f) => f.st !== 'off').length} of ${F.length} online`
+  const row = (f) => `<button class="fr ${f.id === sel ? 'sel' : ''}" data-id="${f.id}">
+      <span class="av ${f.st}" style="background:${f.bg}">${f.emoji}</span>
+      <span class="t"><b>${f.name}</b><span>${f.on && f.share === 'exact' ? '📖 ' + f.on + ' · ' : ''}${today(f)}</span>
+        ${f.planned ? `<div class="bar"><i style="width:${f.done / f.planned * 100}%"></i></div>` : ''}</span>
+      ${status(f)}
+      ${f.st === 'focus' ? `<span class="btn sm main">Join</span>` : f.st === 'on' ? `<span class="btn sm soft">Invite</span>` : ''}
+    </button>`
+  $('list').innerHTML = focusing.map(row).join('') + `<div class="sect" style="margin-top:6px">Everyone</div>` + rest.map(row).join('')
+}
+
+function renderDetail() {
+  const f = F.find((x) => x.id === sel)
+  $('detail').innerHTML = `
+    <div class="card"><div class="dh"><span class="av ${f.st}" style="background:${f.bg}">${f.emoji}</span>
+      <div class="grow"><div style="font-size:20px;font-weight:900">${f.name}</div><div class="small muted">${f.streak}</div></div></div>
+      <div class="row" style="margin-top:12px">${f.st === 'focus' ? '<button class="btn main grow">Join their session</button>' : '<button class="btn main grow" data-together>👥 Focus together</button>'}<button class="btn soft">💬 Note</button></div></div>
+    <div class="card"><div style="font-weight:900;margin-bottom:6px">What ${f.name} sees of you</div>
+      <div class="chips" id="share">${[['exact', '📖 Exact', 'Task names'], ['count', '🔢 Count', '“3 planned · 2 done”'], ['private', '🔒 Private', 'Nothing']].map(([k, l, h]) => `<button class="chip ${f.share === k ? 'on' : ''}" data-share="${k}" title="${h}">${l}</button>`).join('')}</div>
+      <div class="small muted" style="margin-top:6px">Set separately for each friend. Change any time.</div></div>
+    ${f.quest ? `<div class="card"><div class="row"><b>This week, together</b><span class="grow"></span><span class="tab small muted">${f.quest[0]}h / ${f.quest[1]}h</span></div>
+      <div class="bar" style="width:100%;height:8px"><i style="width:${f.quest[0] / f.quest[1] * 100}%"></i></div>
+      <div class="small muted" style="margin-top:6px">Both your focus minutes count. Never a ranking.</div></div>` : ''}
+    <div class="card list"><div class="row"><b>Shared list</b><span class="small muted">· Biology finals</span><span class="grow"></span><button class="btn sm soft">＋</button></div>
+      <ul><li><span class="ck on">✓</span>Chapter 4 summary</li><li><span class="ck"></span>Past paper 2022</li><li><span class="ck"></span>Flashcards ch. 5</li></ul></div>
+    <div class="card"><div class="row"><b>Cheer</b><span class="grow"></span><div class="react">${['👏', '🔥', '🤝', '☕'].map((e) => `<button data-react>${e}</button>`).join('')}</div></div></div>
+    <button class="small muted" style="text-align:left;padding:2px 4px">Remove friend — stops all sharing instantly</button>`
+}
+
+function renderSheet() {
+  $('pick').innerHTML = F.filter((f) => f.st !== 'off').map((f) => `<button class="${pickSet.has(f.id) ? 'on' : ''}" data-p="${f.id}"><span class="a" style="background:${f.bg}">${f.emoji}</span>${f.name}</button>`).join('')
+  $('mins').innerHTML = [25, 50, 90].map((m) => `<button class="chip ${mins === m ? 'on' : ''}" data-m="${m}">${m} min</button>`).join('')
+  $('calls').innerHTML = [['video', '📹', 'Video'], ['audio', '🎧', 'Audio'], ['none', '🤫', 'No call']].map(([k, e, l]) => `<button class="${call === k ? 'on' : ''}" data-c="${k}"><span style="font-size:22px">${e}</span>${l}</button>`).join('')
+  $('callnote').textContent = call === 'none' ? 'Just the shared clock — like a silent library table.' : `Mics mute automatically while you focus; talk during check-in and breaks.${pickSet.size > 1 ? ` Group call with ${pickSet.size + 1} people.` : ''}`
+  $('send').innerHTML = `Send to ${pickSet.size} friend${pickSet.size === 1 ? '' : 's'} <kbd>Enter ↵</kbd>`
+}
+
+function openRoom() {
+  $('scrim').classList.remove('on')
+  const people = [{ name: 'You', emoji: '🧑‍🎓', bg: '#2F4E4A' }, ...F.filter((f) => pickSet.has(f.id)).map((f) => ({ name: f.name, emoji: f.emoji, bg: '#2A3842' }))]
+  const cols = people.length <= 1 ? 1 : people.length <= 4 ? 2 : 3
+  $('tiles').style.gridTemplateColumns = `repeat(${cols}, 1fr)`
+  $('tiles').innerHTML = people.map((p) => `<div class="tile" style="background:${p.bg}">${call === 'video' ? p.emoji : '🎧'}<span class="nm">${p.name}</span><span class="mic">🔇</span></div>`).join('')
+  $('room').classList.add('on')
+  let s = mins * 60; $('rclock').textContent = `${mins}:00`; clearInterval(window.rt); window.rt = setInterval(() => { s--; $('rclock').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` }, 1000)
+}
+
+document.addEventListener('click', (e) => {
+  const fr = e.target.closest('.fr'); if (fr) { sel = fr.dataset.id; renderList(); renderDetail(); return }
+  const sh = e.target.closest('[data-share]'); if (sh) { F.find((x) => x.id === sel).share = sh.dataset.share; renderList(); renderDetail(); return }
+  if (e.target.closest('[data-together]') || e.target.closest('#togetherBtn')) { pickSet = new Set([sel]); renderSheet(); $('scrim').classList.add('on'); return }
+  const p = e.target.closest('[data-p]'); if (p) { pickSet.has(p.dataset.p) ? pickSet.delete(p.dataset.p) : pickSet.add(p.dataset.p); if (!pickSet.size) pickSet.add(p.dataset.p); renderSheet(); return }
+  const m = e.target.closest('[data-m]'); if (m) { mins = +m.dataset.m; renderSheet(); return }
+  const c = e.target.closest('[data-c]'); if (c) { call = c.dataset.c; renderSheet(); return }
+  const r = e.target.closest('[data-react]'); if (r) { r.animate([{ transform: 'scale(1.4)' }, { transform: 'scale(1)' }], 300); return }
+  if (e.target.closest('#cancel') || e.target === $('scrim')) $('scrim').classList.remove('on')
+  if (e.target.closest('#send')) openRoom()
+  if (e.target.closest('#leave')) { $('room').classList.remove('on'); clearInterval(window.rt) }
+  if (e.target.closest('#acc')) { F.push({ id: 'riya', name: 'Riya', emoji: '🧑‍🔬', bg: 'var(--sky-soft)', st: 'on', planned: 2, done: 0, share: 'count', quest: [0, 5], streak: 'New friend 🌱' }); $('req').remove(); renderList() }
+  if (e.target.closest('#dec')) $('req').remove()
+})
+document.addEventListener('keydown', (e) => {
+  if (!$('scrim').classList.contains('on')) return
+  if (e.key === 'Enter') { e.preventDefault(); openRoom() }
+  if (e.key === 'Escape') $('scrim').classList.remove('on')
+})
+renderList(); renderDetail()
+</script>
+</body>
+</html>

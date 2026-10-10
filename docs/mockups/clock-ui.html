@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Plan — Focus clock prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #FBF8F3; --bg2: #F4EFE7; --card: #FFFFFF; --ink: #24303B; --muted: #6B7682; --line: #E9E2D6;
+    --main: #2BA59A; --main-soft: #DDF3EF; --sun: #F5B544; --sun-soft: #FFF1D6;
+    --sky: #5B8DEF; --sky-soft: #E3ECFE; --lilac: #8C74D9; --lilac-soft: #EEE8FC; --leaf: #4CB97A;
+    --shadow: 0 1px 2px rgba(36,48,59,.05), 0 6px 20px rgba(36,48,59,.06);
+    --focus-bg: #1A242C; --focus-ink: #EEF2F0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161C21; --bg2: #1C242A; --card: #20292F; --ink: #EAEFF1; --muted: #9AA6AF; --line: #2D383F;
+      --main: #3BBFB2; --main-soft: #1E3A37; --sun-soft: #3A3122; --sky-soft: #1F2C44; --lilac-soft: #2B2541;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: Nunito, ui-rounded, system-ui, sans-serif; background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; }
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+  input { font: inherit; color: inherit; }
+  .tab { font-variant-numeric: tabular-nums; }
+  kbd { font: 800 11px/1 Nunito, sans-serif; padding: 3px 6px; border-radius: 6px; border: 1px solid currentColor; opacity: .7; margin-left: 6px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  /* prototype switcher */
+  .proto { display: flex; gap: 6px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--bg2); align-items: center; flex-wrap: wrap; }
+  .proto b { margin-right: 6px; }
+  .proto button { padding: 7px 14px; border-radius: 999px; font-weight: 800; font-size: 14px; color: var(--muted); }
+  .proto button.on { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+  .proto .sp { margin-left: auto; font-size: 13px; color: var(--muted); display: flex; gap: 4px; align-items: center; }
+  .proto .sp button { padding: 4px 10px; font-size: 13px; }
+
+  .screen { flex: 1; display: none; min-height: 0; }
+  .screen.on { display: flex; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 48px; padding: 0 22px; border-radius: 14px; font-weight: 800; transition: transform .1s; }
+  .btn:active { transform: scale(.97); }
+  .btn.main { background: var(--main); color: #fff; box-shadow: 0 6px 16px color-mix(in oklab, var(--main) 30%, transparent); }
+  .btn.soft { background: var(--bg2); }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .card { background: var(--card); border-radius: 20px; box-shadow: var(--shadow); padding: 16px; }
+
+  /* ───────────── 1. Focus clock ───────────── */
+  #focus { background: radial-gradient(120% 90% at 50% 30%, #24323C 0%, var(--focus-bg) 70%); color: var(--focus-ink); flex-direction: column; align-items: center; padding: 14px 16px 18px; gap: 8px; }
+  .ftop { width: 100%; max-width: 760px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: rgba(238,242,240,.55); font-weight: 700; }
+  .ftask { text-align: center; }
+  .ftask h1 { margin: 0; font-size: 24px; font-weight: 800; }
+  .ftask .goal { color: rgba(238,242,240,.6); font-size: 15px; margin-top: 2px; }
+  .modes { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .modes button { padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 800; background: rgba(255,255,255,.06); color: rgba(238,242,240,.7); }
+  .modes button.on { background: var(--main); color: #fff; }
+  .gauge { width: min(92vw, 520px, calc(100dvh - 330px) * 1.15); flex: none; }
+  .gauge svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .glabel { font: 800 15px Nunito, sans-serif; fill: rgba(238,242,240,.55); }
+  .read { font: 900 58px Nunito, sans-serif; fill: var(--focus-ink); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .sub { font: 700 15px Nunito, sans-serif; fill: rgba(238,242,240,.55); }
+  .fctl { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .fctl .btn.soft { background: rgba(255,255,255,.08); color: var(--focus-ink); height: 44px; padding: 0 16px; font-size: 15px; }
+  .fctl .btn.main { height: 44px; }
+  .pulse { animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .45; } }
+
+  /* ───────────── 2. Today with live dials ───────────── */
+  #today { flex-direction: column; }
+  .tbar { display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: var(--main); color: #fff; font-weight: 800; }
+  .tbar .pill { background: rgba(255,255,255,.2); border-radius: 999px; padding: 6px 12px; font-size: 14px; }
+  .tbar svg { width: 38px; height: 38px; flex: none; }
+  .twrap { width: 100%; max-width: 720px; margin: 0 auto; padding: 18px 16px; display: flex; flex-direction: column; gap: 12px; }
+  .thead { display: flex; align-items: center; gap: 14px; }
+  .thead h1 { margin: 0; font-size: 26px; font-weight: 800; }
+  .task { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+  .task.run { outline: 2px solid var(--main); }
+  .task .dial { width: 52px; height: 52px; flex: none; }
+  .task .t { flex: 1; min-width: 0; }
+  .task .t b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tag { display: inline-block; font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 999px; margin-right: 6px; }
+  .play { width: 42px; height: 42px; border-radius: 14px; background: var(--main-soft); color: var(--main); font-size: 18px; font-weight: 900; }
+  .day { display: flex; gap: 14px; align-items: center; }
+  .day svg { width: 120px; flex: none; }
+  .note { font-size: 13px; color: var(--muted); }
+
+  /* ───────────── 3. Enter-through setup ───────────── */
+  #setup { align-items: center; justify-content: center; padding: 16px; }
+  .wiz { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 18px; }
+  .dots { display: flex; gap: 6px; }
+  .dots i { height: 6px; flex: 1; border-radius: 3px; background: var(--line); transition: background .2s; }
+  .dots i.on { background: var(--main); }
+  .wiz h2 { margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -.01em; }
+  .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .opt { text-align: left; padding: 14px; border-radius: 16px; background: var(--card); box-shadow: var(--shadow); border: 2px solid transparent; font-weight: 800; display: flex; gap: 10px; align-items: center; }
+  .opt .n { width: 24px; height: 24px; border-radius: 8px; background: var(--bg2); display: grid; place-items: center; font-size: 12px; color: var(--muted); flex: none; }
+  .opt.on { border-color: var(--main); background: var(--main-soft); }
+  .opt.on .n { background: var(--main); color: #fff; }
+  .big-in { width: 100%; height: 58px; border-radius: 16px; border: 2px solid var(--line); background: var(--card); padding: 0 18px; font-size: 20px; font-weight: 700; outline: none; }
+  .big-in:focus { border-color: var(--main); }
+  .wfoot { display: flex; align-items: center; gap: 10px; }
+  .wfoot .btn.main { margin-left: auto; }
+  .done-ill { font-size: 64px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="proto">
+  <b>Prototype</b>
+  <button data-go="focus" class="on">1 · Focus clock</button>
+  <button data-go="today">2 · Today with live dials</button>
+  <button data-go="setup">3 · Set up with Enter</button>
+  <span class="sp">Demo speed <button data-speed="1" class="on">×1</button><button data-speed="30">×30</button><button data-speed="120">×120</button></span>
+</div>
+
+<!-- ───────────── 1. Focus clock ───────────── -->
+<section class="screen on" id="focus">
+  <div class="ftop"><span>← Today</span><span id="ftime" class="tab"></span><span>⧉ Float · ⛶ Full screen</span></div>
+  <div class="ftask">
+    <h1>Chapter 4 — Cell respiration</h1>
+    <div class="goal">Done when: summary notes + 10 flashcards</div>
+  </div>
+  <div class="modes" id="modes">
+    <button data-mode="timebox" class="on">⏱ Set time · 25</button>
+    <button data-mode="ladder">📈 Grow my focus · 18</button>
+    <button data-mode="starter">🌱 Just 5 minutes</button>
+    <button data-mode="free">♾ Open timer</button>
+    <button data-mode="blind">🙈 Guess the time</button>
+  </div>
+  <div class="gauge"><svg id="g" viewBox="0 0 420 372" aria-label="Focus clock"></svg></div>
+  <div class="fctl">
+    <button class="btn soft" id="pause">⏸ Pause<kbd>Space</kbd></button>
+    <button class="btn soft">😵 Got distracted<kbd>D</kbd></button>
+    <button class="btn soft">💭 Park a thought<kbd>P</kbd></button>
+    <button class="btn main">✓ I'm done<kbd>Enter</kbd></button>
+  </div>
+</section>
+
+<!-- ───────────── 2. Today ───────────── -->
+<section class="screen" id="today">
+  <div class="tbar"><svg id="barDial" viewBox="0 0 100 100"></svg><span style="flex:1">Chapter 4 — Cell respiration</span><span class="pill tab" id="barTime">—</span><span class="pill">Open</span><span class="pill">✓ Done</span></div>
+  <div class="twrap">
+    <div class="day">
+      <svg id="dayDial" viewBox="0 0 100 100"></svg>
+      <div>
+        <div class="thead"><h1>Good morning, Harshit</h1></div>
+        <div class="muted" id="dayLine">—</div>
+        <div class="note">Big dial = today's study time vs. your 3 h plan. It moves while any timer runs.</div>
+      </div>
+    </div>
+    <div class="card task run"><svg class="dial" id="d0" viewBox="0 0 100 100"></svg><div class="t"><b>Chapter 4 — Cell respiration</b><span class="tag" style="background:var(--leaf-soft,#E2F5EA);color:#2f8a57">Biology</span><span class="small muted tab" id="t0"></span></div><button class="play">⏸</button></div>
+    <div class="card task"><svg class="dial" id="d1" viewBox="0 0 100 100"></svg><div class="t"><b>Practise 20 Spanish verbs</b><span class="tag" style="background:var(--sky-soft);color:var(--sky)">Spanish</span><span class="small muted">0 of 20 min</span></div><button class="play">▶</button></div>
+    <div class="card task"><svg class="dial" id="d2" viewBox="0 0 100 100"></svg><div class="t"><b>Guitar — F chord changes</b><span class="tag" style="background:var(--lilac-soft);color:var(--lilac)">Guitar</span><span class="small muted">12 of 15 min · almost there</span></div><button class="play">▶</button></div>
+    <div class="card task"><svg class="dial" id="d3" viewBox="0 0 100 100"></svg><div class="t"><b>Past paper Q1–Q5</b><span class="tag" style="background:var(--sun-soft);color:#b07a12">Maths</span><span class="small muted">58 of 45 min · ran over</span></div><button class="play">▶</button></div>
+    <div class="note">Every task shows a small dial: time spent vs. its estimate. The running one ticks live. Browser tab title shows <b>12:41 · Chapter 4</b> too.</div>
+  </div>
+</section>
+
+<!-- ───────────── 3. Set up with Enter ───────────── -->
+<section class="screen" id="setup">
+  <div class="wiz" id="wiz"></div>
+</section>
+
+<script>
+/* ───────────── shared ───────────── */
+let speed = 1
+const NS = 'http://www.w3.org/2000/svg'
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e }
+const fmt = (s) => { s = Math.max(0, Math.floor(s)); const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0') }
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim()
+
+// A 270° dial: starts bottom-left (135°) and sweeps clockwise to bottom-right (405°), like a speedometer.
+const ang = (f) => (135 + 270 * f) * Math.PI / 180
+const pt = (cx, cy, r, f) => [cx + r * Math.cos(ang(f)), cy + r * Math.sin(ang(f))]
+function arcPath(cx, cy, r, f0, f1) {
+  f1 = Math.max(f0 + 0.0001, f1)
+  const [x0, y0] = pt(cx, cy, r, f0), [x1, y1] = pt(cx, cy, r, f1)
+  return `M${x0} ${y0} A${r} ${r} 0 ${270 * (f1 - f0) > 180 ? 1 : 0} 1 ${x1} ${y1}`
+}
+
+/* ───────────── 1. Focus clock ───────────── */
+const MODES = {
+  timebox: { mins: 25, label: 'Set time' },
+  ladder: { mins: 18, label: 'Grow my focus' },
+  starter: { mins: 5, label: 'Just 5 minutes' },
+  free: { mins: 60, label: 'Open timer', countUp: true },
+  blind: { mins: 25, label: 'Guess the time', hidden: true },
+}
+let mode = 'timebox', elapsed = 0, paused = false, last = performance.now()
+const g = document.getElementById('g')
+const CX = 210, CY = 200, R = 170
+let parts = {}
+
+function buildGauge() {
+  g.innerHTML = ''
+  const m = MODES[mode]
+  const defs = el('defs', {}, g)
+  const grad = el('linearGradient', { id: 'pg', x1: '0', y1: '1', x2: '1', y2: '0' }, defs)
+  el('stop', { offset: '0', 'stop-color': css('--main') }, grad)
+  el('stop', { offset: '1', 'stop-color': css('--sky') }, grad)
+  const glow = el('filter', { id: 'glow', x: '-50%', y: '-50%', width: '200%', height: '200%' }, defs)
+  el('feGaussianBlur', { stdDeviation: '6' }, glow)
+
+  // track + finish zone (last 20%)
+  el('path', { d: arcPath(CX, CY, R, 0, 1), stroke: 'rgba(255,255,255,.08)', 'stroke-width': 22, fill: 'none', 'stroke-linecap': 'round' }, g)
+  if (!m.countUp && !m.hidden) el('path', { d: arcPath(CX, CY, R, 0.8, 1), stroke: 'rgba(245,181,68,.22)', 'stroke-width': 22, fill: 'none', 'stroke-linecap': 'round' }, g)
+  parts.glowArc = el('path', { stroke: 'url(#pg)', 'stroke-width': 22, fill: 'none', 'stroke-linecap': 'round', filter: 'url(#glow)', opacity: .5 }, g)
+  parts.arc = el('path', { stroke: 'url(#pg)', 'stroke-width': 22, fill: 'none', 'stroke-linecap': 'round' }, g)
+
+  // minute ticks + labels
+  const n = m.mins
+  const step = [1, 2, 5, 10, 15].find((s) => n / s <= 12)
+  for (let i = 0; i <= n; i++) {
+    const f = i / n, major = i % step === 0
+    if (m.hidden) continue
+    const [x0, y0] = pt(CX, CY, R - 20, f), [x1, y1] = pt(CX, CY, R - (major ? 36 : 28), f)
+    el('line', { x1: x0, y1: y0, x2: x1, y2: y1, stroke: major ? 'rgba(238,242,240,.75)' : 'rgba(238,242,240,.25)', 'stroke-width': major ? 3 : 1.5, 'stroke-linecap': 'round' }, g)
+    if (major) { const [lx, ly] = pt(CX, CY, R - 54, f); el('text', { x: lx, y: ly + 5, 'text-anchor': 'middle', class: 'glabel' }, g).textContent = i }
+  }
+  if (m.hidden) el('text', { x: CX, y: CY - 40, 'text-anchor': 'middle', class: 'glabel', style: 'font-size:18px' }, g).textContent = 'Clock hidden — trust your sense of time'
+
+  // seconds ticker: inner ring of 60 dots, sweeps once a minute so the clock is always visibly alive
+  parts.secs = []
+  for (let i = 0; i < 60; i++) {
+    const a = (i / 60) * 2 * Math.PI - Math.PI / 2
+    parts.secs.push(el('circle', { cx: CX + 92 * Math.cos(a), cy: CY - 18 + 92 * Math.sin(a), r: i % 5 === 0 ? 3 : 2, fill: 'rgba(238,242,240,.12)' }, g))
+  }
+
+  // needle + hub
+  parts.needle = el('g', {}, g)
+  el('path', { d: `M${CX - 14} ${CY - 4} L${CX + R - 30} ${CY} L${CX - 14} ${CY + 4} Z`, fill: css('--sun') }, parts.needle)
+  el('circle', { cx: CX, cy: CY, r: 15, fill: '#2C3A45', stroke: css('--sun'), 'stroke-width': 4 }, g)
+  if (m.hidden) parts.needle.style.display = 'none'
+
+  parts.read = el('text', { x: CX, y: CY + 118, 'text-anchor': 'middle', class: 'read' }, g)
+  parts.sub = el('text', { x: CX, y: CY + 150, 'text-anchor': 'middle', class: 'sub' }, g)
+  parts.badge = el('text', { x: CX, y: CY + 66, 'text-anchor': 'middle', class: 'sub', style: 'font-weight:900' }, g)
+}
+
+function drawGauge() {
+  const m = MODES[mode], total = m.mins * 60
+  let f, over = false
+  if (m.countUp) f = (elapsed % total) / total
+  else { f = Math.min(1, elapsed / total); over = elapsed > total }
+  const smoothF = m.hidden ? 0 : f
+  parts.arc.setAttribute('d', arcPath(CX, CY, R, 0, smoothF))
+  parts.glowArc.setAttribute('d', arcPath(CX, CY, R, 0, smoothF))
+  parts.arc.setAttribute('stroke', over ? css('--lilac') : 'url(#pg)')
+  parts.needle.setAttribute('transform', `rotate(${135 + 270 * smoothF} ${CX} ${CY})`)
+
+  const sec = Math.floor(elapsed) % 60
+  parts.secs.forEach((d, i) => d.setAttribute('fill', i === sec ? css('--sun') : i < sec ? 'rgba(238,242,240,.38)' : 'rgba(238,242,240,.12)'))
+
+  const end = new Date(Date.now() + (total - elapsed) * 1000 / speed)
+  if (m.hidden) { parts.read.textContent = '? ? : ? ?'; parts.sub.textContent = 'Your guess: 25 min · press Enter when you think it’s time'; parts.badge.textContent = '' }
+  else if (m.countUp) { parts.read.textContent = fmt(elapsed); parts.sub.textContent = 'counting up · no limit'; parts.badge.textContent = elapsed >= total ? `lap ${Math.floor(elapsed / total) + 1}` : '' }
+  else if (over) { parts.read.textContent = '+' + fmt(elapsed - total); parts.sub.textContent = `extra time · ${m.mins} min done 🎉`; parts.badge.textContent = '' }
+  else { parts.read.textContent = fmt(total - elapsed); parts.sub.textContent = `left of ${m.mins} min · ends ${end.toTimeString().slice(0, 5)}`; parts.badge.textContent = f >= 0.8 ? 'Final stretch' : '' }
+  parts.read.classList.toggle('pulse', paused)
+  if (paused) parts.sub.textContent = 'Paused — Space to continue'
+  document.getElementById('ftime').textContent = new Date().toTimeString().slice(0, 5)
+  document.title = (m.hidden ? '🙈' : parts.read.textContent) + ' · Chapter 4'
+}
+
+document.getElementById('modes').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return
+  document.querySelectorAll('#modes button').forEach((x) => x.classList.toggle('on', x === b))
+  mode = b.dataset.mode; elapsed = 0; buildGauge(); drawGauge()
+})
+document.getElementById('pause').onclick = () => { paused = !paused }
+
+/* ───────────── 2. Today dials ───────────── */
+function miniDial(svg, frac, opts = {}) {
+  svg.innerHTML = ''
+  const over = frac > 1
+  el('path', { d: arcPath(50, 52, 38, 0, 1), stroke: css('--line'), 'stroke-width': 10, fill: 'none', 'stroke-linecap': 'round' }, svg)
+  if (frac > 0) el('path', { d: arcPath(50, 52, 38, 0, Math.min(1, frac)), stroke: over ? css('--lilac') : opts.color || css('--main'), 'stroke-width': 10, fill: 'none', 'stroke-linecap': 'round' }, svg)
+  const n = el('g', { transform: `rotate(${135 + 270 * Math.min(1, frac)} 50 52)` }, svg)
+  el('line', { x1: 50, y1: 52, x2: 80, y2: 52, stroke: opts.needle || css('--ink'), 'stroke-width': 4, 'stroke-linecap': 'round' }, n)
+  el('circle', { cx: 50, cy: 52, r: 6, fill: opts.needle || css('--ink') }, svg)
+  if (opts.text) el('text', { x: 50, y: 92, 'text-anchor': 'middle', style: `font:900 ${opts.size || 14}px Nunito;fill:${opts.textColor || css('--ink')}` }, svg).textContent = opts.text
+}
+function drawToday() {
+  const t0 = 8 * 60 + elapsed, est = 50 * 60
+  miniDial(document.getElementById('d0'), t0 / est, { text: Math.floor(t0 / 60) + 'm' })
+  miniDial(document.getElementById('d1'), 0, { text: '0m' })
+  miniDial(document.getElementById('d2'), 12 / 15, { text: '12m' })
+  miniDial(document.getElementById('d3'), 58 / 45, { text: '58m' })
+  document.getElementById('t0').textContent = `${fmt(t0)} of 50 min · ticking`
+  const dayS = (70 + 8) * 60 + elapsed
+  miniDial(document.getElementById('dayDial'), dayS / (180 * 60), { text: (dayS / 3600).toFixed(1) + 'h', size: 16 })
+  document.getElementById('dayLine').textContent = `${Math.floor(dayS / 3600)}h ${Math.floor(dayS / 60) % 60}m of 3h studied today · 1 of 4 done`
+  miniDial(document.getElementById('barDial'), t0 / est, { color: '#fff', needle: '#fff' })
+  document.getElementById('barTime').textContent = fmt(est - t0) + ' left'
+}
+
+/* ───────────── 3. Enter-through setup ───────────── */
+const STEPS = [
+  { q: 'What are you working on?', hint: 'Pick one — you can add more later.', key: 'kind', opts: ['📚 Studying for an exam', '🎸 Learning a skill', '💼 Work projects', '✍️ A creative project', '🏃 Habits & health'] },
+  { q: 'Give it a name', hint: 'Short is fine. This becomes your first project.', key: 'name', input: true, ph: 'e.g. Biology finals, Spanish, Guitar' },
+  { q: 'How much time a day, roughly?', hint: 'A starting point — the app learns your real pace.', key: 'time', opts: ['⏱ 30 min', '⏱ 1 hour', '⏱ 2 hours', '⏱ 3+ hours'], def: 1 },
+  { q: 'When do you usually start?', hint: 'We’ll nudge you around then.', key: 'when', opts: ['🌅 Morning', '☀️ Afternoon', '🌙 Evening', '🔀 It varies'] },
+  { q: 'Your timer style', hint: 'You can switch on any task.', key: 'timer', opts: ['📈 Grow my focus', '⏱ Fixed 25 min', '♾ Open timer', '🌱 Just 5 minutes'] },
+]
+const NAMES = { '📚 Studying for an exam': 'Biology finals', '🎸 Learning a skill': 'Guitar', '💼 Work projects': 'Q4 report', '✍️ A creative project': 'Short story', '🏃 Habits & health': 'Morning run' }
+let step = 0; const ans = {}; STEPS.forEach((s) => { ans[s.key] = s.input ? '' : (s.def || 0) })
+const wiz = document.getElementById('wiz')
+function renderWiz() {
+  const s = STEPS[step]
+  const dots = `<div class="dots">${STEPS.map((_, i) => `<i class="${i <= step ? 'on' : ''}"></i>`).join('')}<i class="${step >= STEPS.length ? 'on' : ''}"></i></div>`
+  if (!s) {
+    wiz.innerHTML = `${dots}<div class="done-ill">🎉</div><h2 style="text-align:center">All set!</h2>
+      <p class="muted" style="text-align:center;margin:0">${STEPS[0].opts[ans.kind].slice(3)} · <b>${ans.name || NAMES[STEPS[0].opts[ans.kind]]}</b> · ${STEPS[2].opts[ans.time].slice(2)} a day · ${STEPS[3].opts[ans.when].slice(3)}</p>
+      <div class="wfoot"><button class="btn soft" data-back>← Back<kbd>Esc</kbd></button><button class="btn main" data-next>Go to Today<kbd>Enter ↵</kbd></button></div>`
+    return
+  }
+  const body = s.input
+    ? `<input class="big-in" id="in" value="${ans.name}" placeholder="${NAMES[STEPS[0].opts[ans.kind]] || s.ph}" autocomplete="off" />
+       <div class="small muted">Leave empty and press Enter to use “${NAMES[STEPS[0].opts[ans.kind]]}”.</div>`
+    : `<div class="opts">${s.opts.map((o, i) => `<button class="opt ${ans[s.key] === i ? 'on' : ''}" data-i="${i}"><span class="n">${i + 1}</span>${o}</button>`).join('')}</div>
+       <div class="small muted">Press a number to choose · Enter to continue · already picked a sensible default</div>`
+  wiz.innerHTML = `${dots}<div><h2>${s.q}</h2><div class="muted">${s.hint}</div></div>${body}
+    <div class="wfoot">${step ? '<button class="btn soft" data-back>← Back<kbd>Esc</kbd></button>' : ''}<span class="small muted">Step ${step + 1} of ${STEPS.length}</span><button class="btn main" data-next>Next<kbd>Enter ↵</kbd></button></div>`
+  const inp = document.getElementById('in'); if (inp) { inp.focus(); inp.oninput = () => { ans.name = inp.value } }
+}
+function next() { if (step >= STEPS.length) { step = 0; STEPS.forEach((s) => { ans[s.key] = s.input ? '' : (s.def || 0) }) } else step++; renderWiz() }
+function back() { if (step > 0) { step--; renderWiz() } }
+wiz.addEventListener('click', (e) => {
+  const o = e.target.closest('[data-i]'); if (o) { ans[STEPS[step].key] = +o.dataset.i; renderWiz(); return }
+  if (e.target.closest('[data-next]')) next()
+  if (e.target.closest('[data-back]')) back()
+})
+
+/* ───────────── switching, keys, loop ───────────── */
+let screen = 'focus'
+document.querySelectorAll('[data-go]').forEach((b) => b.onclick = () => {
+  screen = b.dataset.go
+  document.querySelectorAll('[data-go]').forEach((x) => x.classList.toggle('on', x === b))
+  document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('on', s.id === screen))
+  if (screen === 'setup') renderWiz()
+})
+document.querySelectorAll('[data-speed]').forEach((b) => b.onclick = () => {
+  speed = +b.dataset.speed; document.querySelectorAll('[data-speed]').forEach((x) => x.classList.toggle('on', x === b))
+})
+document.addEventListener('keydown', (e) => {
+  if (screen === 'focus') {
+    if (e.code === 'Space') { e.preventDefault(); paused = !paused }
+    if (e.key === 'Enter') { elapsed = 0 }
+  }
+  if (screen === 'setup') {
+    const s = STEPS[step]
+    if (e.key === 'Enter') { e.preventDefault(); next() }
+    else if (e.key === 'Escape') back()
+    else if (s && !s.input && /^[1-9]$/.test(e.key) && +e.key <= s.opts.length) { ans[s.key] = +e.key - 1; renderWiz() }
+  }
+})
+function loop(now) {
+  const dt = (now - last) / 1000; last = now
+  if (!paused) elapsed += dt * speed
+  if (screen === 'focus') drawGauge()
+  if (screen === 'today') drawToday()
+  requestAnimationFrame(loop)
+}
+buildGauge(); renderWiz()
+requestAnimationFrame(loop)
+</script>
+</body>
+</html>

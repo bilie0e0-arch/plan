@@ -1,0 +1,51 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    env:
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      PASSWORD_BREACH_CHECK: 'off'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - name: Start Supabase
+        run: |
+          # storage-api v1.79.33+ images ship an empty package.json; pin the last working version.
+          mkdir -p supabase/.temp && printf 'v1.79.32' > supabase/.temp/storage-version
+          npx supabase start
+      - name: Export Supabase env
+        run: |
+          STATUS=$(npx supabase status -o json)
+          URL=$(echo "$STATUS" | jq -r .API_URL)
+          PUB=$(echo "$STATUS" | jq -r '.PUBLISHABLE_KEY // .ANON_KEY')
+          SEC=$(echo "$STATUS" | jq -r '.SECRET_KEY // .SERVICE_ROLE_KEY')
+          for v in "$URL" "$PUB" "$SEC"; do
+            if [ -z "$v" ] || [ "$v" = "null" ]; then echo "Missing Supabase status value"; exit 1; fi
+          done
+          echo "NEXT_PUBLIC_SUPABASE_URL=$URL" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$PUB" >> "$GITHUB_ENV"
+          echo "SUPABASE_SECRET_KEY=$SEC" >> "$GITHUB_ENV"
+      - name: Database security tests (RLS)
+        run: npx supabase test db
+      - name: Generated types are current
+        run: |
+          npx supabase gen types typescript --local > /tmp/types.ts
+          diff -q /tmp/types.ts src/lib/supabase/database.types.ts
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e

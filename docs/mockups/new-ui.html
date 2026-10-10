@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Plan — New UI prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  /* ───────────── Calm-but-rich palette: warm paper, one fresh main colour, soft area tints ───────────── */
+  :root {
+    --bg: #FBF8F3; --bg2: #F4EFE7; --card: #FFFFFF; --ink: #24303B; --muted: #6B7682; --line: #E9E2D6;
+    --main: #2BA59A; --main-ink: #FFFFFF; --main-soft: #DDF3EF;
+    --sun: #F5B544; --sun-soft: #FFF1D6;
+    --sky: #5B8DEF; --sky-soft: #E3ECFE;
+    --lilac: #8C74D9; --lilac-soft: #EEE8FC;
+    --leaf: #4CB97A; --leaf-soft: #E2F5EA;
+    --shadow: 0 1px 2px rgba(36,48,59,.05), 0 6px 20px rgba(36,48,59,.06);
+    --radius: 20px;
+    --focus-bg: #1F2A33; --focus-ink: #EEF2F0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161C21; --bg2: #1C242A; --card: #20292F; --ink: #EAEFF1; --muted: #9AA6AF; --line: #2D383F;
+      --main: #3BBFB2; --main-soft: #1E3A37; --sun-soft: #3A3122; --sky-soft: #1F2C44; --lilac-soft: #2B2541; --leaf-soft: #1D3528;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: Nunito, ui-rounded, system-ui, sans-serif; background: var(--bg); color: var(--ink); font-size: 16px; -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+  input { font: inherit; color: inherit; }
+  .tab { font-variant-numeric: tabular-nums; }
+  @media (min-width: 900px) { .proto { bottom: 12px !important; left: auto !important; right: 12px; } }
+  .proto.min > :not(.pt) { display: none; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  /* ───────────── Layout: sidebar on desktop, bottom tabs on phone ───────────── */
+  .app { display: flex; min-height: 100dvh; }
+  .side { width: 240px; padding: 22px 14px; border-right: 1px solid var(--line); background: var(--bg2); display: none; flex-direction: column; gap: 6px; }
+  @media (min-width: 900px) { .side { display: flex; } .bottom { display: none !important; } }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; padding: 4px 10px 18px; }
+  .logo { width: 30px; height: 30px; border-radius: 10px; background: linear-gradient(135deg, var(--main), var(--sky)); display: grid; place-items: center; color: #fff; }
+  .nav { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 14px; color: var(--muted); font-weight: 700; transition: background .15s, color .15s; }
+  .nav:hover { background: var(--card); color: var(--ink); }
+  .nav.on { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+  .nav .ico { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; font-size: 17px; }
+  .main { flex: 1; min-width: 0; padding: 20px 16px 120px; }
+  @media (min-width: 900px) { .main { padding: 28px 44px 60px; } }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  .bottom { position: fixed; inset: auto 0 0 0; display: grid; grid-template-columns: repeat(5, 1fr); background: color-mix(in oklab, var(--card) 92%, transparent); backdrop-filter: blur(10px); border-top: 1px solid var(--line); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); z-index: 30; }
+  .bottom button { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; font-weight: 700; color: var(--muted); padding: 6px 0; }
+  .bottom button.on { color: var(--main); }
+  .bottom .big { width: 50px; height: 50px; margin: -18px auto 0; border-radius: 18px; background: var(--main); color: #fff; font-size: 26px; display: grid; place-items: center; box-shadow: 0 8px 20px color-mix(in oklab, var(--main) 40%, transparent); }
+
+  /* ───────────── Top timer bar: always visible while a timer runs ───────────── */
+  .timerbar { position: sticky; top: 0; z-index: 25; margin: -20px -16px 16px; padding: 10px 16px; background: var(--main); color: #fff; display: none; align-items: center; gap: 12px; font-weight: 700; }
+  @media (min-width: 900px) { .timerbar { margin: -28px -44px 20px; padding: 10px 44px; } }
+  .timerbar.show { display: flex; animation: drop .25s ease-out; }
+  .timerbar .pill { background: rgba(255,255,255,.2); border-radius: 999px; padding: 6px 12px; font-size: 14px; }
+  @keyframes drop { from { transform: translateY(-100%); } to { transform: none; } }
+
+  /* ───────────── Cards & controls ───────────── */
+  .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .grow { flex: 1; min-width: 0; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  h1 { font-size: 28px; margin: 0; font-weight: 800; letter-spacing: -.01em; }
+  h2 { font-size: 18px; margin: 0; font-weight: 800; }
+  .btn { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 20px; border-radius: 14px; font-weight: 800; transition: transform .1s, filter .15s; }
+  .btn:active { transform: scale(.97); }
+  .btn.main { background: var(--main); color: var(--main-ink); box-shadow: 0 6px 16px color-mix(in oklab, var(--main) 30%, transparent); }
+  .btn.soft { background: var(--bg2); }
+  .btn.ghost { color: var(--muted); }
+  .btn.block { width: 100%; }
+  .btn.grow { flex: 1; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { padding: 9px 14px; border-radius: 999px; background: var(--bg2); font-weight: 700; font-size: 14px; border: 2px solid transparent; transition: all .15s; }
+  .chip.on { background: var(--main-soft); border-color: var(--main); color: var(--ink); }
+  .seg { display: inline-flex; background: var(--bg2); border-radius: 999px; padding: 4px; gap: 2px; }
+  .seg button { padding: 7px 14px; border-radius: 999px; font-weight: 800; font-size: 14px; color: var(--muted); transition: all .2s; }
+  .seg button.on { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+
+  /* Header */
+  .hello { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  .ring { --p: 0; width: 64px; height: 64px; border-radius: 50%; background: conic-gradient(var(--main) calc(var(--p) * 1%), var(--bg2) 0); display: grid; place-items: center; transition: --p .6s; flex-shrink: 0; }
+  .ring > span { width: 50px; height: 50px; border-radius: 50%; background: var(--card); display: grid; place-items: center; font-weight: 800; font-size: 14px; }
+
+  /* Add box */
+  .add { display: flex; gap: 10px; align-items: center; padding: 8px 8px 8px 18px; border-radius: 18px; background: var(--card); box-shadow: var(--shadow); border: 2px solid transparent; transition: border-color .15s; }
+  .add:focus-within { border-color: var(--main); }
+  .add .btn, .add .mic { flex: 0 0 auto; }
+  .add input { flex: 1 1 auto; width: 0; border: 0; outline: 0; background: transparent; font-size: 17px; font-weight: 600; padding: 10px 0; min-width: 0; }
+  .add .mic { width: 42px; height: 42px; border-radius: 12px; background: var(--bg2); font-size: 18px; }
+  .suggest { display: flex; gap: 8px; overflow-x: auto; padding: 10px 2px 4px; scrollbar-width: none; }
+  .suggest .chip { white-space: nowrap; }
+
+  /* Task cards */
+  .tasks { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+  .task { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 18px; background: var(--card); box-shadow: var(--shadow); transition: transform .2s, opacity .3s; }
+  .task.new { animation: pop .35s ease-out; }
+  @keyframes pop { from { transform: scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
+  .task .play { width: 46px; height: 46px; border-radius: 50%; background: var(--main-soft); color: var(--main); display: grid; place-items: center; font-size: 18px; flex-shrink: 0; transition: transform .15s, background .15s; }
+  .task .play:hover { transform: scale(1.06); }
+  .task.running { outline: 2px solid var(--main); }
+  .task.done { opacity: .6; }
+  .task.done .t { text-decoration: line-through; }
+  .task .t { font-weight: 800; font-size: 16px; }
+  .task .meta { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); margin-top: 2px; flex-wrap: wrap; }
+  .tag { padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+  .mini { position: relative; width: 46px; height: 46px; flex-shrink: 0; }
+  .mini svg { transform: rotate(-90deg); }
+  .mini span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; font-weight: 800; }
+  .icon-btn { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; color: var(--muted); transition: background .15s; }
+  .icon-btn:hover { background: var(--bg2); }
+
+  /* Area tiles (welcoming, interactive) */
+  .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 18px; }
+  @media (min-width: 640px) { .tiles { grid-template-columns: repeat(4, 1fr); } }
+  .tile { border-radius: 18px; padding: 14px; text-align: left; transition: transform .15s; }
+  .tile:hover { transform: translateY(-2px); }
+  .tile .e { font-size: 22px; }
+  .tile b { display: block; margin-top: 6px; }
+  .tile small { color: var(--muted); font-weight: 600; }
+
+  /* Partner chip */
+  .partner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 16px; background: var(--lilac-soft); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--leaf); box-shadow: 0 0 0 3px color-mix(in oklab, var(--leaf) 25%, transparent); }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--lilac), var(--sky)); color: #fff; display: grid; place-items: center; font-weight: 800; }
+
+  /* Bottom sheets (instead of dropdowns) */
+  .scrim { position: fixed; inset: 0; background: rgba(20,28,34,.35); backdrop-filter: blur(2px); z-index: 50; display: none; align-items: flex-end; justify-content: center; }
+  .scrim.show { display: flex; animation: fade .2s; }
+  @media (min-width: 700px) { .scrim { align-items: center; } }
+  .sheet { width: min(520px, 100%); background: var(--card); border-radius: 26px 26px 0 0; padding: 22px 20px calc(22px + env(safe-area-inset-bottom)); animation: up .25s ease-out; max-height: 88dvh; overflow: auto; }
+  @media (min-width: 700px) { .sheet { border-radius: 26px; } }
+  .grab { width: 44px; height: 5px; border-radius: 9px; background: var(--line); margin: -8px auto 14px; }
+  @keyframes up { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes fade { from { opacity: 0; } }
+  .opt { display: flex; gap: 14px; align-items: center; width: 100%; text-align: left; padding: 14px; border-radius: 16px; border: 2px solid var(--line); margin-top: 10px; transition: all .15s; }
+  .opt:hover { border-color: color-mix(in oklab, var(--main) 50%, var(--line)); }
+  .opt.on { border-color: var(--main); background: var(--main-soft); }
+  .opt .e { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; font-size: 22px; flex-shrink: 0; }
+
+  /* Toast-like invite card */
+  .invite { position: fixed; right: 16px; bottom: 96px; width: min(340px, calc(100vw - 32px)); z-index: 45; display: none; }
+  @media (min-width: 900px) { .invite { bottom: 24px; } }
+  .invite.show { display: block; animation: up .3s ease-out; }
+
+  /* ───────────── Focus screen: calm, nothing but the work ───────────── */
+  .focus { position: fixed; inset: 0; z-index: 60; background: radial-gradient(120% 90% at 50% 0%, #26343F 0%, var(--focus-bg) 60%); color: var(--focus-ink); display: none; flex-direction: column; align-items: center; padding: 20px; }
+  .focus.show { display: flex; animation: fade .3s; }
+  .focus .top { width: 100%; max-width: 760px; display: flex; justify-content: space-between; align-items: center; color: rgba(238,242,240,.6); font-weight: 700; font-size: 14px; }
+  .focus .center { margin: auto; display: flex; flex-direction: column; align-items: center; gap: 22px; text-align: center; width: 100%; }
+  .bigring { position: relative; width: min(300px, 72vw); aspect-ratio: 1; }
+  .bigring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+  .bigring .num { position: absolute; inset: 0; display: grid; place-items: center; font-size: clamp(48px, 13vw, 68px); font-weight: 700; letter-spacing: -.02em; }
+  .breath { animation: breathe 6s ease-in-out infinite; }
+  @keyframes breathe { 50% { opacity: .55; } }
+  .fbtns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: min(420px, 100%); }
+  .fbtn { padding: 14px 6px; border-radius: 16px; background: rgba(255,255,255,.07); color: rgba(238,242,240,.85); font-weight: 800; display: flex; flex-direction: column; gap: 4px; align-items: center; transition: background .15s; }
+  .fbtn:hover { background: rgba(255,255,255,.12); }
+  .fbtn.go { background: rgba(43,165,154,.25); color: #CFF5EF; }
+  .pairrings { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+  .pairrings .bigring { width: min(200px, 38vw); }
+  .pairrings .num { font-size: clamp(32px, 8vw, 44px); }
+
+  /* Celebration */
+  .celebrate { position: fixed; inset: 0; z-index: 70; display: none; align-items: center; justify-content: center; background: rgba(251,248,243,.82); backdrop-filter: blur(4px); }
+  .celebrate.show { display: flex; animation: fade .2s; }
+  .conf { position: fixed; top: -10px; width: 10px; height: 14px; border-radius: 3px; animation: fall 1.6s ease-in forwards; z-index: 71; }
+  @keyframes fall { to { transform: translateY(105vh) rotate(540deg); opacity: .7; } }
+  .emo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .emo button { padding: 14px 6px; border-radius: 16px; background: var(--bg2); font-weight: 800; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: transform .15s; }
+  .emo button:hover { transform: translateY(-2px); }
+  .emo button span { font-size: 28px; }
+
+  /* Guide (first run) */
+  .guide { position: fixed; left: 50%; transform: translateX(-50%); bottom: 100px; z-index: 40; width: min(440px, calc(100vw - 24px)); background: var(--ink); color: var(--bg); border-radius: 18px; padding: 14px 16px; display: none; box-shadow: 0 12px 30px rgba(0,0,0,.2); }
+  @media (min-width: 900px) { .guide { bottom: 28px; } }
+  .guide.show { display: block; animation: up .3s; }
+  .guide .steps { display: flex; gap: 5px; margin-bottom: 8px; }
+  .guide .steps i { height: 4px; flex: 1; border-radius: 4px; background: rgba(255,255,255,.25); }
+  .guide .steps i.on { background: var(--main); }
+  .pulse { animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--main) 45%, transparent); } 50% { box-shadow: 0 0 0 10px transparent; } }
+
+  /* Prototype helper bar */
+  .proto { position: fixed; left: 10px; bottom: 84px; width: max-content; z-index: 90; background: var(--ink); color: var(--bg); border-radius: 14px; padding: 8px 10px; font-size: 12px; display: flex; gap: 8px; align-items: center; opacity: .9; }
+  .proto button { background: rgba(255,255,255,.15); color: inherit; border-radius: 8px; padding: 4px 8px; font-weight: 700; }
+  .section-title { display: flex; align-items: center; justify-content: space-between; margin: 26px 0 4px; }
+  .page { display: none; } .page.on { display: block; animation: fade .25s; }
+  .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 12px; }
+  .day { border-radius: 14px; background: var(--card); box-shadow: var(--shadow); padding: 10px 6px; text-align: center; min-height: 120px; display: flex; flex-direction: column; gap: 6px; }
+  .day b { font-size: 12px; color: var(--muted); }
+  .block { font-size: 11px; font-weight: 800; border-radius: 9px; padding: 6px 4px; }
+  .bar { height: 10px; border-radius: 99px; background: var(--bg2); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 99px; background: var(--main); transition: width .6s; }
+</style>
+</head>
+<body>
+
+<div class="proto min" id="proto" aria-label="Prototype controls">
+  <button class="pt" onclick="this.parentElement.classList.toggle('min')">⚙︎ Demo</button>
+  <button onclick="setSpeed()" id="speedBtn">Speed ×1</button>
+  <button onclick="startGuide()">Replay guide</button>
+  <button onclick="toggleTheme()">Light/Dark</button>
+</div>
+
+<div class="app">
+  <!-- Sidebar (desktop) -->
+  <aside class="side">
+    <div class="brand"><div class="logo">✦</div> Plan</div>
+    <button class="nav on" data-go="today"><span class="ico" style="background:var(--main-soft)">☀️</span> Today</button>
+    <button class="nav" data-go="plan"><span class="ico" style="background:var(--sky-soft)">🗓️</span> Plan</button>
+    <button class="nav" data-go="progress"><span class="ico" style="background:var(--sun-soft)">🌱</span> Progress</button>
+    <button class="nav" data-go="partner"><span class="ico" style="background:var(--lilac-soft)">🤝</span> Partner</button>
+    <div style="flex:1"></div>
+    <div class="card" style="padding:14px">
+      <div class="small muted" style="font-weight:700">Work mode</div>
+      <div class="seg" style="margin-top:8px;width:100%" role="group" aria-label="Solo or pair">
+        <button class="on" data-mode="solo" style="flex:1">🙂 Solo</button>
+        <button data-mode="pair" style="flex:1">🤝 Pair</button>
+      </div>
+    </div>
+    <button class="nav" style="margin-top:6px"><span class="ico">⚙️</span> Settings</button>
+  </aside>
+
+  <main class="main">
+    <div class="timerbar" id="timerbar">
+      <span>⏱️</span>
+      <span class="grow" id="tbText">Focusing on…</span>
+      <span class="pill tab" id="tbTime">25:00</span>
+      <button class="pill" onclick="openFocus()">Open</button>
+      <button class="pill" onclick="finishTask()">✓ Done</button>
+    </div>
+
+    <div class="wrap">
+      <!-- ───────────── TODAY ───────────── -->
+      <section class="page on" id="page-today">
+        <div class="hello">
+          <div>
+            <div class="muted small" style="font-weight:700" id="dateLine">Friday, 9 October</div>
+            <h1 id="greet">Good morning, Harshit ☀️</h1>
+            <div class="muted" style="margin-top:4px" id="sub">Let’s make today count — one thing at a time.</div>
+          </div>
+          <div class="ring" id="dayRing" style="--p:0" title="Today’s progress"><span class="tab" id="dayRingTxt">0/0</span></div>
+        </div>
+
+        <!-- Mode switch (phone) + partner -->
+        <div class="row" style="margin-bottom:14px;flex-wrap:wrap">
+          <div class="seg" role="group" aria-label="Solo or pair">
+            <button class="on" data-mode="solo">🙂 Solo</button>
+            <button data-mode="pair">🤝 Pair</button>
+          </div>
+          <div class="partner grow" id="partnerChip" style="display:none">
+            <div class="avatar">R</div>
+            <div class="grow"><b>Rahul</b> <span class="muted small">· online · 2/4 done</span></div>
+            <span class="dot"></span>
+            <button class="btn main" style="height:38px;padding:0 14px" onclick="openSheet('inviteSheet')">Focus together</button>
+          </div>
+        </div>
+
+        <!-- Add a task -->
+        <div class="add" id="addBox">
+          <span style="font-size:20px">＋</span>
+          <input id="newTask" placeholder="What do you want to do?" aria-label="New task" />
+          <button class="mic" title="Say it">🎤</button>
+          <button class="btn main" style="height:42px;padding:0 16px" onclick="addTask()">Add</button>
+        </div>
+        <div class="suggest" id="suggest">
+          <button class="chip" onclick="quickAdd('📖 Read 10 pages')">📖 Read 10 pages</button>
+          <button class="chip" onclick="quickAdd('✍️ Write for 25 min')">✍️ Write for 25 min</button>
+          <button class="chip" onclick="quickAdd('🏃 15-min walk')">🏃 15-min walk</button>
+          <button class="chip" onclick="quickAdd('📧 Clear emails')">📧 Clear emails</button>
+        </div>
+
+        <div class="section-title">
+          <h2>Today</h2>
+          <button class="btn soft" style="height:38px" onclick="runList()">▶ Start my list</button>
+        </div>
+        <div class="tasks" id="tasks"></div>
+        <div class="card muted" id="empty" style="text-align:center;display:none;margin-top:14px">
+          <div style="font-size:34px">🌤️</div>
+          <b style="color:var(--ink)">A fresh start.</b><br />Add one thing above — then press ▶ to begin.
+        </div>
+
+        <!-- Quiet extras: one line, opens when wanted -->
+        <div class="tiles">
+          <button class="tile" style="background:var(--sun-soft)" onclick="go('progress')"><span class="e">🎯</span><b>Mission</b><small>4 of 10 guesses</small></button>
+          <button class="tile" style="background:var(--leaf-soft)" onclick="go('progress')"><span class="e">🌿</span><b>Habits</b><small>1 of 2 today</small></button>
+          <button class="tile" style="background:var(--sky-soft)" onclick="go('plan')"><span class="e">🗓️</span><b>Next block</b><small>Writing · 16:00</small></button>
+          <button class="tile" style="background:var(--lilac-soft)" onclick="go('progress')"><span class="e">🎤</span><b>Speak</b><small>1-min drill</small></button>
+        </div>
+      </section>
+
+      <!-- ───────────── PLAN ───────────── -->
+      <section class="page" id="page-plan">
+        <h1>Plan your week 🗓️</h1>
+        <p class="muted">Drag time for your goals into the days. Keep some space free — life happens.</p>
+        <div class="card" style="margin-top:14px">
+          <div class="row"><b class="grow">GMAT · 6h this week</b><span class="muted small tab">4h placed</span></div>
+          <div class="bar" style="margin-top:8px"><i style="width:66%"></i></div>
+          <div class="row" style="margin-top:14px"><b class="grow">Writing · 3h this week</b><span class="muted small tab">1h placed</span></div>
+          <div class="bar" style="margin-top:8px"><i style="width:33%;background:var(--sky)"></i></div>
+        </div>
+        <div class="week">
+          <div class="day"><b>Mon</b><span class="block" style="background:var(--main-soft)">GMAT 7:00</span></div>
+          <div class="day"><b>Tue</b><span class="block" style="background:var(--sky-soft)">Write 16:00</span></div>
+          <div class="day"><b>Wed</b><span class="block" style="background:var(--main-soft)">GMAT 7:00</span></div>
+          <div class="day"><b>Thu</b></div>
+          <div class="day"><b>Fri</b><span class="block" style="background:var(--main-soft)">GMAT 7:00</span></div>
+          <div class="day"><b>Sat</b><span class="block" style="background:var(--lilac-soft)">With Rahul</span></div>
+          <div class="day"><b>Sun</b><span class="block" style="background:var(--sun-soft)">Weekly review</span></div>
+        </div>
+        <button class="btn main block" style="margin-top:16px">🔒 Lock in my week</button>
+      </section>
+
+      <!-- ───────────── PROGRESS ───────────── -->
+      <section class="page" id="page-progress">
+        <h1>Your progress 🌱</h1>
+        <p class="muted">You against your past self — nobody else.</p>
+        <div class="card" style="margin-top:14px;background:linear-gradient(135deg,var(--sun-soft),var(--card))">
+          <div class="row"><span style="font-size:30px">🎯</span><div class="grow"><b>This week’s mission: Guess the time</b><div class="muted small">Guess how long a task takes, then see how close you got.</div></div></div>
+          <div class="bar" style="margin-top:12px"><i style="width:40%;background:var(--sun)"></i></div>
+          <div class="small muted tab" style="margin-top:6px">4 of 10 done</div>
+        </div>
+        <div class="tiles" style="grid-template-columns:repeat(2,1fr)">
+          <div class="tile" style="background:var(--main-soft)"><span class="e">🧘</span><b>Focus</b><small>25 → 35 min this month ↑</small></div>
+          <div class="tile" style="background:var(--sky-soft)"><span class="e">⏳</span><b>Time guessing</b><small>Within 30% — getting closer</small></div>
+          <div class="tile" style="background:var(--leaf-soft)"><span class="e">🤞</span><b>Keeping promises</b><small>8 of 10 blocks kept</small></div>
+          <div class="tile" style="background:var(--lilac-soft)"><span class="e">🎤</span><b>Speaking</b><small>Fillers 6 → 3 a minute</small></div>
+        </div>
+        <div class="card" style="margin-top:14px"><div class="row"><span style="font-size:26px">🏆</span><div class="grow"><b>Personal best</b><div class="muted small">Longest calm session: 55 min</div></div></div></div>
+        <button class="btn soft block" style="margin-top:14px">✨ Weekly review (10 min)</button>
+      </section>
+
+      <!-- ───────────── PARTNER ───────────── -->
+      <section class="page" id="page-partner">
+        <h1>Focus with a friend 🤝</h1>
+        <p class="muted">Keep each other on track. You choose exactly what they can see.</p>
+        <div class="card" style="margin-top:14px;text-align:center">
+          <div class="muted small" style="font-weight:700">Your partner code</div>
+          <div style="font-size:32px;font-weight:800;letter-spacing:.08em;margin:6px 0" class="tab">PLN-7K3Q9</div>
+          <div class="chips" style="justify-content:center"><button class="chip">📋 Copy</button><button class="chip">📤 Share on WhatsApp</button></div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <b>Add a friend by their code</b>
+          <div class="add" style="margin-top:10px;box-shadow:none;background:var(--bg2)"><input placeholder="PLN-…" /><button class="btn main" style="height:40px">Send request</button></div>
+          <div class="muted small" style="margin-top:10px">Friend not on Plan yet? <a href="#" style="color:var(--main);font-weight:800">Send an invite link</a></div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <b>What your partner sees</b>
+          <div class="opt on"><span class="e" style="background:var(--main-soft)">🔢</span><div><b>Just numbers</b><div class="muted small">“3 planned · 2 done” — no titles</div></div></div>
+          <div class="opt"><span class="e" style="background:var(--sky-soft)">📝</span><div><b>Everything</b><div class="muted small">Your task names and goals</div></div></div>
+          <div class="opt"><span class="e" style="background:var(--bg2)">🔒</span><div><b>Nothing</b><div class="muted small">Only that you’re online</div></div></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- Phone bottom tabs -->
+<nav class="bottom">
+  <button class="on" data-go="today">☀️<span>Today</span></button>
+  <button data-go="plan">🗓️<span>Plan</span></button>
+  <button onclick="document.getElementById('newTask').focus()" aria-label="Add task"><span class="big">＋</span></button>
+  <button data-go="progress">🌱<span>Progress</span></button>
+  <button data-go="partner">🤝<span>Partner</span></button>
+</nav>
+
+<!-- ───────────── Sheet: change timer (cards instead of dropdowns) ───────────── -->
+<div class="scrim" id="timerSheet" onclick="if(event.target===this)closeSheet(this.id)">
+  <div class="sheet">
+    <div class="grab"></div>
+    <h2>How do you want to time it?</h2>
+    <div class="muted small" style="margin-top:4px" id="timerFor">For: Read chapter 3</div>
+    <button class="opt on" data-timer="set" onclick="pickTimer(this)"><span class="e" style="background:var(--main-soft)">⏱️</span><div class="grow"><b>Set time</b><div class="muted small">A fixed block, e.g. 25 minutes</div></div></button>
+    <button class="opt" data-timer="grow" onclick="pickTimer(this)"><span class="e" style="background:var(--leaf-soft)">🌱</span><div class="grow"><b>Grow my focus</b><div class="muted small">Starts at your level, grows when you stay focused</div></div></button>
+    <button class="opt" data-timer="five" onclick="pickTimer(this)"><span class="e" style="background:var(--sun-soft)">🚀</span><div class="grow"><b>Just 5 minutes</b><div class="muted small">For things you keep putting off — just begin</div></div></button>
+    <button class="opt" data-timer="guess" onclick="pickTimer(this)"><span class="e" style="background:var(--sky-soft)">🔮</span><div class="grow"><b>Guess the time</b><div class="muted small">Guess first — the clock stays hidden</div></div></button>
+    <button class="opt" data-timer="open" onclick="pickTimer(this)"><span class="e" style="background:var(--bg2)">♾️</span><div class="grow"><b>Open timer</b><div class="muted small">No limit — stop when you’re done</div></div></button>
+    <div style="margin-top:16px"><b class="small">How long?</b>
+      <div class="chips" style="margin-top:8px" id="lenChips">
+        <button class="chip" onclick="pickLen(this,15)">15 min</button><button class="chip on" onclick="pickLen(this,25)">25 min</button><button class="chip" onclick="pickLen(this,45)">45 min</button><button class="chip" onclick="pickLen(this,60)">1 hour</button>
+      </div>
+    </div>
+    <button class="btn main block" style="margin-top:18px" onclick="startFromSheet()">▶ Start</button>
+  </div>
+</div>
+
+<!-- ───────────── Sheet: invite partner ───────────── -->
+<div class="scrim" id="inviteSheet" onclick="if(event.target===this)closeSheet(this.id)">
+  <div class="sheet" style="text-align:center">
+    <div class="grab"></div>
+    <div class="avatar" style="margin:0 auto 10px;width:56px;height:56px;font-size:22px">R</div>
+    <h2>Focus together with Rahul?</h2>
+    <div class="muted small" style="margin-top:4px">He gets a small invite. If he’s busy focusing, it waits.</div>
+    <div class="chips" style="justify-content:center;margin-top:16px">
+      <button class="chip" onclick="pickChip(this)">25 min</button><button class="chip on" onclick="pickChip(this)">50 min</button><button class="chip" onclick="pickChip(this)">75 min</button>
+    </div>
+    <button class="btn main block" style="margin-top:18px" onclick="sendInvite()">Send invite</button>
+  </div>
+</div>
+
+<!-- ───────────── Incoming invite (small card, never a takeover) ───────────── -->
+<div class="invite card" id="inviteCard">
+  <div class="row"><div class="avatar">R</div><div class="grow"><b>Rahul: focus together?</b><div class="muted small">50 minutes, now</div></div></div>
+  <button class="btn main block" style="margin-top:12px" onclick="acceptInvite()">Join now</button>
+  <div class="row" style="margin-top:8px"><button class="btn soft grow" style="height:38px" onclick="hideInvite('In 10 min — sent 👍')">In 10 min</button><button class="btn soft grow" style="height:38px" onclick="hideInvite('Told him: later')">Later</button></div>
+  <button class="btn ghost block" style="height:30px;font-size:13px" onclick="hideInvite('Not today 🙂')">Not today</button>
+</div>
+
+<!-- ───────────── Focus screen (calm) ───────────── -->
+<div class="focus" id="focus">
+  <div class="top"><button onclick="closeFocus()" style="color:inherit">← Back</button><span id="fMode">⏱️ Set time · 25 min</span><span id="fPartner"></span></div>
+  <div class="center">
+    <div style="opacity:.6;font-weight:700" id="fStep">First step: open the book to page 41</div>
+    <div style="font-size:clamp(22px,4vw,30px);font-weight:800" id="fTitle">Read chapter 3</div>
+    <div id="soloRing" class="bigring">
+      <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="6"/><circle id="fArc" cx="60" cy="60" r="52" fill="none" stroke="#5FD0C4" stroke-width="6" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7" style="transition:stroke-dashoffset .9s linear"/></svg>
+      <div class="num tab" id="fNum">25:00</div>
+    </div>
+    <div id="pairRings" class="pairrings" style="display:none">
+      <div style="text-align:center"><div class="bigring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="6"/><circle class="pArc" cx="60" cy="60" r="52" fill="none" stroke="#5FD0C4" stroke-width="6" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7" style="transition:stroke-dashoffset .9s linear"/></svg><div class="num tab pNum">50:00</div></div><b>You</b></div>
+      <div style="text-align:center"><div class="bigring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="6"/><circle class="pArc" cx="60" cy="60" r="52" fill="none" stroke="#B9A6F2" stroke-width="6" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7" style="transition:stroke-dashoffset .9s linear"/></svg><div class="num tab pNum">50:00</div></div><b>Rahul</b> <span style="opacity:.6">· goal ✓ set</span></div>
+    </div>
+    <div class="breath" style="opacity:.7" id="fHint">Breathe. Just this one thing.</div>
+    <div class="fbtns">
+      <button class="fbtn" onclick="toastMsg('Noted — back to it 💪')">🫧<span>Got distracted</span></button>
+      <button class="fbtn" id="pauseBtn" onclick="togglePause()">⏸<span>Pause</span></button>
+      <button class="fbtn go" onclick="finishTask()">✓<span>I’m done</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ───────────── Celebration + 1-tap review ───────────── -->
+<div class="celebrate" id="celebrate">
+  <div class="card" style="width:min(400px,calc(100vw - 32px));text-align:center;padding:26px">
+    <div style="font-size:46px">🎉</div>
+    <h2 style="font-size:22px;margin-top:6px" id="celTitle">25 minutes of real focus!</h2>
+    <div class="muted" style="margin-top:4px">Did you get what you wanted?</div>
+    <div class="emo">
+      <button onclick="afterReview()"><span>😄</span>Yes!</button>
+      <button onclick="afterReview()"><span>🙂</span>Partly</button>
+      <button onclick="afterReview()"><span>😕</span>Not yet</button>
+    </div>
+    <button class="btn ghost" style="margin-top:10px" onclick="afterReview()">Skip</button>
+  </div>
+</div>
+
+<div class="guide" id="guide" role="status">
+  <div class="steps"><i></i><i></i><i></i></div>
+  <div id="guideText" style="font-weight:700"></div>
+  <div class="row" style="margin-top:10px"><span class="grow small" style="opacity:.7" id="guideHint"></span><button style="color:inherit;opacity:.7;font-weight:800" onclick="endGuide()">Skip</button></div>
+</div>
+
+<div id="toast" style="position:fixed;left:50%;transform:translateX(-50%);top:16px;z-index:95;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:14px;font-weight:700;display:none"></div>
+
+<script>
+  // ───────────── State ─────────────
+  let speed = 1
+  let tasks = [
+    { id: 1, title: 'Read chapter 3', min: 25, tag: ['GMAT', 'var(--main-soft)'], done: false, step: 'open the book to page 41' },
+    { id: 2, title: 'Write the intro', min: 45, tag: ['Writing', 'var(--sky-soft)'], done: false, step: 'write one ugly first sentence' },
+    { id: 3, title: 'Call Sam', min: 15, tag: null, done: false },
+  ]
+  let running = null // { id, total, left, paused, pair }
+  let pendingId = null, timerKind = 'set', timerLen = 25, mode = 'solo'
+  const TIMER_LABEL = { set: '⏱️ Set time', grow: '🌱 Grow my focus', five: '🚀 Just 5 minutes', guess: '🔮 Guess the time', open: '♾️ Open timer' }
+  const $ = (id) => document.getElementById(id)
+  const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.max(0, s) % 60).padStart(2, '0')}`
+
+  // ───────────── Greeting & date ─────────────
+  const h = new Date().getHours()
+  $('greet').textContent = h < 12 ? 'Good morning, Harshit ☀️' : h < 17 ? 'Good afternoon, Harshit 🌤️' : 'Good evening, Harshit 🌙'
+  $('dateLine').textContent = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
+
+  // ───────────── Rendering ─────────────
+  function render() {
+    const list = $('tasks')
+    list.innerHTML = ''
+    $('empty').style.display = tasks.length ? 'none' : 'block'
+    for (const t of tasks) {
+      const isRun = running && running.id === t.id
+      const el = document.createElement('div')
+      el.className = 'task' + (isRun ? ' running' : '') + (t.done ? ' done' : '') + (t.isNew ? ' new' : '')
+      t.isNew = false
+      const left = isRun ? running.left : t.min * 60
+      const pct = isRun ? 1 - running.left / running.total : 0
+      el.innerHTML = `
+        ${t.done ? `<div class="play" style="background:var(--leaf-soft);color:var(--leaf)">✓</div>`
+          : isRun ? `<div class="mini"><svg viewBox="0 0 46 46" width="46" height="46"><circle cx="23" cy="23" r="20" fill="none" stroke="var(--bg2)" stroke-width="4"/><circle cx="23" cy="23" r="20" fill="none" stroke="var(--main)" stroke-width="4" stroke-linecap="round" stroke-dasharray="125.7" stroke-dashoffset="${125.7 * (1 - pct)}"/></svg><span class="tab">${Math.ceil(left / 60)}m</span></div>`
+          : `<button class="play" title="Start" aria-label="Start ${t.title}">▶</button>`}
+        <div class="grow">
+          <div class="t">${t.title}</div>
+          <div class="meta">${isRun ? `<b style="color:var(--main)" class="tab">${fmt(left)} left${running.paused ? ' · paused' : ''}</b>` : t.done ? 'Done 🎉' : `⏱️ ${t.min} min`}${t.tag ? `<span class="tag" style="background:${t.tag[1]}">${t.tag[0]}</span>` : ''}</div>
+        </div>
+        ${isRun ? `<button class="btn main" style="height:38px;padding:0 14px">✓ Done</button>`
+          : t.done ? '' : `<button class="icon-btn" title="Change timer">⚙︎</button>`}`
+      if (!t.done) {
+        const play = el.querySelector('.play'); if (play) play.onclick = () => startTask(t.id, 'set', t.min)
+        const cog = el.querySelector('.icon-btn'); if (cog) cog.onclick = () => { pendingId = t.id; $('timerFor').textContent = 'For: ' + t.title; openSheet('timerSheet') }
+        const done = el.querySelector('.btn.main'); if (done) done.onclick = finishTask
+      }
+      list.appendChild(el)
+    }
+    const doneN = tasks.filter((t) => t.done).length
+    $('dayRing').style.setProperty('--p', tasks.length ? Math.round((doneN / tasks.length) * 100) : 0)
+    $('dayRingTxt').textContent = `${doneN}/${tasks.length}`
+    $('sub').textContent = doneN === 0 ? 'Let’s make today count — one thing at a time.' : doneN === tasks.length ? 'Everything done. Lovely day 🌿' : `${doneN} done — nice momentum ✨`
+    // Top timer bar
+    const tb = $('timerbar')
+    if (running) {
+      const t = tasks.find((x) => x.id === running.id)
+      tb.classList.add('show'); $('tbText').textContent = (running.pair ? '🤝 With Rahul · ' : '') + (t ? t.title : 'Focus')
+      $('tbTime').textContent = fmt(running.left)
+    } else tb.classList.remove('show')
+  }
+
+  // ───────────── Actions ─────────────
+  function addTask(title) {
+    const input = $('newTask')
+    const v = (title ?? input.value).trim()
+    if (!v) { input.focus(); return }
+    const m = v.match(/(\d+)\s*min/)
+    tasks.push({ id: Date.now(), title: v.replace(/\s*\d+\s*min/, '') || v, min: m ? +m[1] : 25, tag: null, done: false, isNew: true })
+    input.value = ''
+    render()
+    toastMsg('Added ✨ Press ▶ when you’re ready')
+    guideNext(1)
+  }
+  function quickAdd(t) { addTask(t) }
+  $('newTask').addEventListener('keydown', (e) => { if (e.key === 'Enter') addTask() })
+
+  function startTask(id, kind, len, pair = false) {
+    if (running && running.id !== id) { toastMsg('One timer at a time — finish or pause the current one'); return }
+    const t = tasks.find((x) => x.id === id)
+    running = { id, total: len * 60, left: len * 60, paused: false, pair }
+    $('fTitle').textContent = t.title
+    $('fStep').textContent = t.step ? 'First step: ' + t.step : ''
+    $('fMode').textContent = pair ? '🤝 Together · 50 min' : `${TIMER_LABEL[kind]} · ${len} min`
+    $('fPartner').textContent = pair ? '🟢 Rahul is focusing' : ''
+    $('soloRing').style.display = pair ? 'none' : 'block'
+    $('pairRings').style.display = pair ? 'grid' : 'none'
+    render(); openFocus(); guideNext(2)
+  }
+  function startFromSheet() { closeSheet('timerSheet'); if (pendingId) startTask(pendingId, timerKind, timerKind === 'five' ? 5 : timerLen) }
+  function pickTimer(el) { document.querySelectorAll('[data-timer]').forEach((b) => b.classList.remove('on')); el.classList.add('on'); timerKind = el.dataset.timer }
+  function pickLen(el, n) { document.querySelectorAll('#lenChips .chip').forEach((b) => b.classList.remove('on')); el.classList.add('on'); timerLen = n }
+  function pickChip(el) { el.parentElement.querySelectorAll('.chip').forEach((b) => b.classList.remove('on')); el.classList.add('on') }
+  function runList() { const next = tasks.find((t) => !t.done); if (next) startTask(next.id, 'set', next.min); else toastMsg('All done for today 🎉') }
+
+  function tick() {
+    if (!running || running.paused) return
+    running.left -= 1
+    const pct = 1 - running.left / running.total
+    $('fNum').textContent = fmt(running.left)
+    $('fArc').setAttribute('stroke-dashoffset', 326.7 * (1 - pct))
+    document.querySelectorAll('.pNum').forEach((n) => (n.textContent = fmt(running.left)))
+    document.querySelectorAll('.pArc').forEach((a) => a.setAttribute('stroke-dashoffset', 326.7 * (1 - pct)))
+    if (running.left <= 0) { running.left = 0; $('fHint').textContent = 'Time! Finish when you’re ready 🌟' }
+    render()
+  }
+  let loop = setInterval(tick, 1000)
+  function setSpeed() { speed = speed === 1 ? 30 : 1; clearInterval(loop); loop = setInterval(tick, 1000 / speed); $('speedBtn').textContent = `Speed ×${speed}` }
+
+  function togglePause() { if (!running) return; running.paused = !running.paused; $('pauseBtn').innerHTML = running.paused ? '▶<span>Resume</span>' : '⏸<span>Pause</span>'; render() }
+  function openFocus() { if (running) $('focus').classList.add('show') }
+  function closeFocus() { $('focus').classList.remove('show') }
+  function finishTask() {
+    if (!running) return
+    const mins = Math.max(1, Math.round((running.total - running.left) / 60))
+    const t = tasks.find((x) => x.id === running.id); if (t) t.done = true
+    running = null; closeFocus(); render()
+    $('celTitle').textContent = `${mins} minute${mins > 1 ? 's' : ''} of real focus!`
+    $('celebrate').classList.add('show'); confetti(); guideNext(3)
+  }
+  function afterReview() { $('celebrate').classList.remove('show'); toastMsg('Saved. Want the next one? ▶') }
+
+  // ───────────── Solo / Pair ─────────────
+  document.querySelectorAll('[data-mode]').forEach((b) => b.onclick = () => setMode(b.dataset.mode))
+  function setMode(m) {
+    mode = m
+    document.querySelectorAll('[data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === m))
+    $('partnerChip').style.display = m === 'pair' ? 'flex' : 'none'
+    if (m === 'pair') { toastMsg('Pair mode — Rahul is online 🟢'); setTimeout(() => $('inviteCard').classList.add('show'), 6000) }
+    else $('inviteCard').classList.remove('show')
+  }
+  function sendInvite() { closeSheet('inviteSheet'); toastMsg('Invite sent to Rahul ✉️'); setTimeout(() => { toastMsg('Rahul joined! Opening your room…'); setTimeout(() => startPair(), 1200) }, 2200) }
+  function acceptInvite() { $('inviteCard').classList.remove('show'); startPair() }
+  function hideInvite(msg) { $('inviteCard').classList.remove('show'); toastMsg(msg) }
+  function startPair() {
+    let t = tasks.find((x) => !x.done)
+    if (!t) { t = { id: Date.now(), title: 'Focus together', min: 50, tag: null, done: false }; tasks.push(t) }
+    startTask(t.id, 'set', 50, true)
+  }
+
+  // ───────────── Navigation ─────────────
+  function go(page) {
+    document.querySelectorAll('.page').forEach((p) => p.classList.toggle('on', p.id === 'page-' + page))
+    document.querySelectorAll('[data-go]').forEach((b) => b.classList.toggle('on', b.dataset.go === page))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  document.querySelectorAll('[data-go]').forEach((b) => b.onclick = () => go(b.dataset.go))
+
+  // ───────────── Sheets, toast, confetti ─────────────
+  function openSheet(id) { $(id).classList.add('show') }
+  function closeSheet(id) { $(id).classList.remove('show') }
+  function toastMsg(m) { const t = $('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => (t.style.display = 'none'), 2200) }
+  function confetti() {
+    const colors = ['#2BA59A', '#F5B544', '#5B8DEF', '#8C74D9', '#4CB97A']
+    for (let i = 0; i < 40; i++) {
+      const c = document.createElement('i'); c.className = 'conf'
+      c.style.left = Math.random() * 100 + 'vw'; c.style.background = colors[i % colors.length]
+      c.style.animationDelay = Math.random() * 0.4 + 's'; document.body.appendChild(c); setTimeout(() => c.remove(), 2200)
+    }
+  }
+  function toggleTheme() { const r = document.documentElement; r.dataset.theme = r.dataset.theme === 'dark' ? 'light' : 'dark'; if (r.dataset.theme === 'dark') { r.style.cssText = '--bg:#161C21;--bg2:#1C242A;--card:#20292F;--ink:#EAEFF1;--muted:#9AA6AF;--line:#2D383F;--main-soft:#1E3A37;--sun-soft:#3A3122;--sky-soft:#1F2C44;--lilac-soft:#2B2541;--leaf-soft:#1D3528' } else r.style.cssText = '' }
+
+  // ───────────── First-run guide: do, don't read ─────────────
+  const GUIDE = [
+    ['👋 Welcome! Type one thing you want to do today.', 'Or tap a suggestion below the box'],
+    ['Nice! Now press ▶ on a task to start its timer.', 'The timer stays visible the whole time'],
+    ['You’re focusing 🎯 Press “I’m done” whenever you finish.', 'Tip: ⚙︎ Demo → Speed ×30 fast-forwards the timer'],
+    ['🎉 That’s it! Add, press ▶, finish. You’ve got this.', 'Everything else is optional'],
+  ]
+  let gStep = -1
+  function startGuide() { gStep = 0; showGuide(); $('addBox').classList.add('pulse') }
+  function showGuide() {
+    if (gStep < 0) return
+    $('guide').classList.add('show')
+    $('guideText').textContent = GUIDE[gStep][0]; $('guideHint').textContent = GUIDE[gStep][1]
+    document.querySelectorAll('#guide .steps i').forEach((s, i) => s.classList.toggle('on', i <= gStep))
+    if (gStep === 3) setTimeout(endGuide, 3500)
+  }
+  function guideNext(n) { if (gStep >= 0 && n > gStep) { gStep = n; $('addBox').classList.remove('pulse'); showGuide() } }
+  function endGuide() { gStep = -1; $('guide').classList.remove('show'); $('addBox').classList.remove('pulse') }
+
+  render()
+  setTimeout(startGuide, 700)
+</script>
+</body>
+</html>
