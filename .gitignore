@@ -6,3 +6,5 @@ web/supabase/.branches/
 web/test-results/
 web/playwright-report/
 .next/
+deploy/
+*.log
