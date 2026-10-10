@@ -42,7 +42,10 @@ export async function signup(_prev: AuthState, formData: FormData): Promise<Auth
   if (!available) return { error: 'That username is taken.' }
 
   const supabase = await createClient()
-  const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { username, timezone } } })
+  const { data, error } = await supabase.auth.signUp({
+    email, password,
+    options: { data: { username, timezone }, emailRedirectTo: `${publicEnv.NEXT_PUBLIC_SITE_URL}/auth/confirm?next=/` },
+  })
   if (error) return { error: 'Could not create the account. Please try again.' }
 
   if (!data.session) redirect('/check-email')
