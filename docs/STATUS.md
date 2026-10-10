@@ -104,6 +104,8 @@ Known, not fixed (low risk): login timing differs for unknown usernames (usernam
 
 ## Rules agreed with the owner
 
+- **No CI** — removed 2026-10-10 (15 min per push not worth it); run the checks locally before pushing.
+
 - **Free services only** — skip anything paid (no paid transcription; browser speech recognition instead).
 - **No AI features** — the user does the thinking; Guide is rule-based and fades as skills grow.
 - **Lean testing** — build each milestone in one pass, test once at the end (security, core logic, one E2E per journey).

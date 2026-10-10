@@ -40,7 +40,7 @@ on conflict (key) do update set value = excluded.value;
 | `npm run build` then `npm run test:e2e` | Browser journeys: auth, daily loop, isolation, goal→calendar→launcher, speaking drill (fake mic) |
 | `npm run db:types` | Regenerate `src/lib/supabase/database.types.ts` after a migration |
 
-CI (`../.github/workflows/ci.yml`) runs all of the above on every push.
+Run these locally before pushing (there is no CI).
 
 ## Deploy (owner approval needed for database steps)
 
